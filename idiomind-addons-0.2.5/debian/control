@@ -1,0 +1,17 @@
+Source: idiomind-export-audio
+Section: x11
+Priority: optional
+Maintainer: Robin Palatnik <robinpalat@gmail.com>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.7
+Homepage: https://idiomind.sourceforge.net
+
+Package: idiomind-export-audio
+Architecture: all
+Depends: ${misc:Depends}, idiomind, mp3wrap, sox, eyeD3
+Enhances: idiomind
+Description: Speech to text is an addon for Idiomind
+ For this feature you need to provide a key. Please get one from:
+ https://console.developers.google.com.
+ .
+ Idiomind is a vocabulary learning tool based on shell scripts and YAD (GUI)

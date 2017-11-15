@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for idiomind-export-audio
+# postinst script for idiomind-addons
 #
 # see: dh_installdeb(1)
 

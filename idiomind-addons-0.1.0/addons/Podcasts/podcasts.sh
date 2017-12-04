@@ -447,8 +447,10 @@ function update() {
                                     taskItem="$lbltp ${ttitle}"
                                     [  $(wc -c <<< $ttitle) -gt 60 ] && \
                                     taskItem="$lbltp ${ttitle:0:60}..."
-                                    echo "${taskItem}" >> "$DC_a/Podcasts.tasks"
-
+                                    if ! grep -Fxq "${taskItem}" "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
+										echo "${taskItem}" >> "$DC_a/Podcasts.tasks"
+                                    fi
+                                    
                                     if grep '^$' "$DCP/1.lst"; then
                                         sed -i '/^$/d' "$DCP/1.lst"
                                     fi
@@ -555,7 +557,7 @@ function update() {
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
 		if [ $(cat "$DC_a/Podcasts.tasks" |wc -l) -gt 8 ]; then
-			cat "$DC_a/Podcasts.tasks" |tail -n 8 > "$DT/Podcasts.tasks"
+			awk '!x[$0]++' "$DC_a/Podcasts.tasks" |tail -n 8 > "$DT/Podcasts.tasks"
 			mv -f "$DT/Podcasts.tasks" "$DC_a/Podcasts.tasks"
 		fi
         removes
@@ -833,7 +835,7 @@ function tasks() {
 		pod=$(grep -o "channel"=\"[^\"]* "$DMC/$fname.item" |grep -o '[^"]*$')
 		epi=$(grep -o "title"=\"[^\"]* "$DMC/$fname.item" |grep -o '[^"]*$')
 		(sleep 2; notify-send -i "idiomind" "${pod}" "${epi}" -t 10000) &
-		"$DS/stop.sh" 2
+		"$DS/stop.sh" 2; sleep 1
 		echo "${item}" > "$DT/play2lck"
 		"$DS/ifs/mods/chng/podcasts.sh"
 	else

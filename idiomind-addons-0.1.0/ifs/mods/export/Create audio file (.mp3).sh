@@ -6,16 +6,16 @@ rword=$(grep -oP '(?<=rword=\").*(?=\")' "${DC_tlt}/10.cfg")
 autr=$(grep -oP '(?<=autr=\").*(?=\")' "$DC/3.cfg")
 mkdir -p "$DT/export_audio/a"
 dire="$DT/export_audio"
-s1="$DS/addons/Save as Audio/si1.mp3"
-s2="$DS/addons/Save as Audio/si2.mp3"
-so1="$DS/addons/Save as Audio/si0_1.mp3"
-so2="$DS/addons/Save as Audio/si0_2.mp3"
-s4="$DS/addons/Save as Audio/si4.mp3"
-img="$DS/addons/Save as Audio/$tlng.png"
+s1="$DS/addons/Save as audio/si1.mp3"
+s2="$DS/addons/Save as audio/si2.mp3"
+so1="$DS/addons/Save as audio/si0_1.mp3"
+so2="$DS/addons/Save as audio/si0_2.mp3"
+s4="$DS/addons/Save as audio/si4.mp3"
+img="$DS/addons/Save as audio/$tlng.png"
 cd "${dire}"/
 
 extchk () {
-	msg "$(gettext "Something unexpected happened, exiting.")\n(Item: $trg)" \
+	msg "$(gettext "Something unexpected happened, exiting.")\n)" \
 	error "$(gettext "Information")" 
 	cleanups "$DT/export_audio" & exit 1
 }
@@ -24,7 +24,6 @@ n=1; a=1
 while read -r _item; do
     [ ! -d "$DT/export_audio" ] && break
     unset cdid trgt ; get_item "${_item}"
-    
 	if [ -n "${trgt}" -a -n "${cdid}" ]; then
     
 		echo -n "${trgt}" >> "${dire}/text"

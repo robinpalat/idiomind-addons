@@ -12,7 +12,7 @@ function dlg_progress_2() {
     --name=Idiomind --class=Idiomind \
     --window-icon=idiomind \
     --progress-text=" " \
-    --percentage="5" --auto-close \
+    --percentage="100" --auto-close \
     --no-buttons --on-top --fixed \
     --width=200 --height=50 --borders=4 --geometry=240x20-10-10
 }
@@ -102,13 +102,14 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         internet
         if [ "$lgt" = ja -o "$lgt" = 'zh-cn' -o "$lgt" = ru ]; then c=c; else c=w; fi
         lns=$(ls "$DT_r"/[0-9]*.mp3 |wc -l |head -200)
+
         n=1
         while [[ ${n} -le ${lns} ]]; do
             unset trgt; unset_item
             if [ -f "$DT_r"/${n}.mp3 ]; then
-                
                 if [ ! -e "$DT_r/index" ]; then
                     sox "$DT_r"/${n}.mp3 "$DT_r/info.flac" rate 16k
+                   
                     data="$(audio_recog "$DT_r/info.flac" $lgt $lgt $apikeygo)"
                     
                     if [ -z "${data}" ]; then
@@ -123,18 +124,20 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     |sed 's/","confidence"://g' \
                     |sed "s/[0-9].[0-9]//g" \
                     |sed 's/}],"final":true}],"result_index":0}//g')"
+
                 else
                     trgt="$(sed -n ${n}p "$DT_r/index" |sed 's/^\s*./\U&\E/g')"
                 fi
+    
                 if [ ${#trgt} -ge 400 ]; then
                     echo -e "\n$n) [$(gettext "Sentence too long")] $trgt" >> "$DT_r/slog"
                 elif [ -z "$trgt" ]; then
                     trgt="$n) ..."
                     export cdid="$(set_name_file 2 "${trgt}" "" "" "" "" "")"
-                    index 2 "${tpe}" "${trgt}" "" "" "" "" "" "${cdid}"
+                    index 2
                     mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
                     echo -e "\n$n) [$(gettext "Text missing")]" >> "$DT_r/slog"
-                elif [[ $(wc -l < "${DC_tlt}/0.cfg") -ge 200 ]]; then
+                elif [[ $(wc -l < "${DC_tlt}/data") -ge 200 ]]; then
                     echo -e "\n$n) $trgt [$(gettext "Maximum number of notes has been exceeded")]" >> "$DT_r/slog"
                 else
                     if [ -f "$DT_r/translation" ]; then
@@ -143,42 +146,43 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                         export trgt=$(clean_2 "${trgt}")
                         srce="$(translate "${trgt}" $lgt $lgs |sed ':a;N;$!ba;s/\n/ /g')"
                         export srce="$(clean_2 "${srce}")"
-                        
-                    fi
-                    if [ $(wc -$c <<< "${trgt}") -eq 1 ]; then
-                        export trgt="$(clean_1 "${trgt}")"
-                        export srce="$(clean_1 "${srce}")"
-                        export cdid="$(set_name_file 1 "${trgt}" "${srce}" "" "" "" "" "")"
-                        audio="${trgt,,}"
-                        mksure "${trgt}" "${srce}"
-                        if [ $? = 0 ]; then
-                            index 1 "${tpe}" "${trgt}" "${srce}" "" "" "" "" "${cdid}"
-                            mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
-                            echo "${trgt}" >> "$DT_r/addw"
-                        else
-                            echo -e "\n$n) $trgt" >> "$DT_r/wlog"
-                        fi 
-                    elif [ $(wc -$c <<< "$trgt") -ge 1 ]; then
-                        ( export DT_r; sentence_p 1
-                        export cdid="$(set_name_file 2 "${trgt}" "${srce}" "" "" "${wrds}" "${grmr}")"
-                        mksure "${trgt}" "${srce}" "${wrds}" "${grmr}"
-                            if [ $? = 0 ]; then
-                                index 2
-                                mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
-                                echo "${trgt}" >> "$DT_r/adds"
-                                ( fetch_audio "$aw" "$bw" )
-                            else
-                                echo -e "\n$n) $trgt" >> "$DT_r/slog"
-                            fi
-                        rm -f "$aw" "$bw" )
                     fi
                 fi
+                
+                if [ $(wc -${c} <<< "${trgt}") -eq 1 ]; then
+                    export trgt="$(clean_1 "${trgt}")"
+                    export srce="$(clean_1 "${srce}")"
+                    export cdid="$(set_name_file 1 "${trgt}" "${srce}" "" "" "" "" "")"
+                    audio="${trgt,,}"
+                    mksure "${trgt}" "${srce}"
+                    #if [ $? = 0 ]; then
+                        index 1
+                        mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
+                        echo "${trgt}" >> "$DT_r/addw"
+                    #else
+                        #echo -e "\n$n) $trgt" >> "$DT_r/wlog"
+                    #fi 
+                elif [ $(wc -${c} <<< "$trgt") -ge 1 ]; then
+                    ( export DT_r; sentence_p 1
+                    export cdid="$(set_name_file 2 "${trgt}" "${srce}" "" "" "${wrds}" "${grmr}")"
+                    mksure "${trgt}" "${srce}" "${wrds}" "${grmr}"
+                        #if [ $? = 0 ]; then
+                            index 2
+                            mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
+                            echo "${trgt}" >> "$DT_r/adds"
+                            ( fetch_audio "$aw" "$bw" )
+                        #else
+                            #echo -e "\n$n) $trgt" >> "$DT_r/slog"
+                        #fi
+                    rm -f "$aw" "$bw" )
+                fi
+                    
                 rm -f "$DT_r/info.flac" "$DT_r/info.ret"
             else
                 continue
             fi
-            prg=$((100*n/lns-1))
-            echo "$prg"
+            
+            echo $((100*n/lns-1))
             echo "# ${trgt:0:35}..." ;
             let n++
         done

@@ -45,16 +45,16 @@ get_itep() {
 
 
 if [ -e "$DT/play2lck" ]; then
-	item="$(cat "$DT/play2lck")"
-	fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
-	if [ -f "$DMC/$fname.mp3" ]; then
-		echo "${item}" > "$DT/playlck"
-		echo "${item}" > "$DT/play2lck"
-		"$DS"/play.sh play_file "$DMC/$fname.mp3" "${item}"
-		[ -e "$DT/playlck" ] && echo 0 > "$DT/playlck"
-	else
-		notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
-	fi
+    item="$(cat "$DT/play2lck")"
+    fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
+    if [ -f "$DMC/$fname.mp3" ]; then
+        echo "${item}" > "$DT/playlck"
+        echo "${item}" > "$DT/play2lck"
+        "$DS"/play.sh play_file "$DMC/$fname.mp3" "${item}"
+        [ -e "$DT/playlck" ] && echo 0 > "$DT/playlck"
+    else
+        notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
+    fi
 
 elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${e_keep} = TRUE ]]; then
 

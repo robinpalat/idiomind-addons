@@ -574,7 +574,7 @@ function update() {
 
 
 function vwr() {
-    sz=(640 400); [[ ${swind} = TRUE ]] && sz=(540 300)
+    sz=(760 480); [[ ${swind} = TRUE ]] && sz=(540 300)
     dir="$DM_tl/Podcasts/cache"
     fname=$(echo -n "${item}" | md5sum | rev | cut -c 4- | rev)
     channel="$(grep -o channel=\"[^\"]* "$dir/${fname}.item" |grep -o '[^"]*$')"

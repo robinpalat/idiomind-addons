@@ -150,7 +150,7 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${e_keep} = TRUE ]];
             done < "$DPC/1.lst"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             mplayer -noconsolecontrols -name Idiomind \
-            -title "${c} $(gettext "videos") - mplayer" \
+            -title "Idiomind (mplayer)" \
             -playlist "$DT/list.m3u"; wait
         fi
         find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;

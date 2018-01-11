@@ -10,11 +10,11 @@ _testflac="$DS/addons/Speech to text/test.flac"
 function dlg_progress_2() {
     yad --progress --title="$(gettext "Progress")" \
     --name=Idiomind --class=Idiomind \
-    --window-icon=idiomind \
-    --progress-text=" " \
-    --percentage="100" --auto-close \
+    --window-icon=idiomind --align=right \
+    --progress-text=" " --auto-close \
+    --percentage="0" --timeout=300 \
     --no-buttons --on-top --fixed \
-    --width=200 --height=50 --borders=4 --geometry=240x20-10-10
+    --width=300 --height=40 --borders=4 --geometry=300x40-50-50
 }
 
 function audio_recog() {
@@ -55,9 +55,10 @@ if [[ ${conten^} = ${char_ini^} ]]; then
     else
         internet
         check_s "${tpe}"
-        ( echo "2"
-        echo "# $(gettext "Processing... Wait.")";
+        notify-send -i idiomind "$(gettext "Getting text from audio files")" \
+        "$(gettext "Wait a moment please...")"
         cd "$DT_r"
+        
         if grep ".mp3" <<< "${fl: -4}"; then
             cp -f "${fl}" "$DT_r/rv.mp3"
             sox "$DT_r/rv.mp3" "$DT_r/c_rv.mp3" remix - highpass 100 norm \
@@ -85,14 +86,14 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             cp -f "$fl" "$DT_r/rv.tar.gz"
             tar -xzvf "$DT_r/rv.tar.gz" --strip-components=1
         fi
-        echo "3"
-        echo "# $(gettext "Checking key")..."; sleep 1
+
+        echo "# $(gettext "Checking key")..."
         data="$(audio_recog "$_testflac" "$lgt" "$lgt" $apikeygo)"
         if [ -z "${data}" ]; then
             msg "The key is invalid or has exceeded its quota of daily requests" error
             cleanups "$DT_r" "$lckpr" & exit 1
         fi
-        echo "# $(gettext "Processing")..." ; sleep 0.2
+        echo "# $(gettext "Processing")..."
         touch "$DT_r/wlog" "$DT_r/slog" \
         "$DT_r/adds" "$DT_r/addw" "$DT_r/swlog"
         if [ ! -d "${DM_tlt}" ]; then
@@ -102,13 +103,17 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         internet
         if [ "$lgt" = ja -o "$lgt" = 'zh-cn' -o "$lgt" = ru ]; then c=c; else c=w; fi
         lns=$(ls "$DT_r"/[0-9]*.mp3 |wc -l |head -200)
+        
+        ( echo "1"
+        echo "# $(gettext "Processing... Wait.")";
+        erw=1
+        while [[ ${erw} -le ${lns} ]]; do
+            unset trgt; unset _item
+            
+            if [ -f "$DT_r/${erw}.mp3" ]; then
 
-        n=1
-        while [[ ${n} -le ${lns} ]]; do
-            unset trgt; unset_item
-            if [ -f "$DT_r"/${n}.mp3 ]; then
                 if [ ! -e "$DT_r/index" ]; then
-                    sox "$DT_r"/${n}.mp3 "$DT_r/info.flac" rate 16k
+                    sox "$DT_r/${erw}.mp3" "$DT_r/info.flac" rate 16k
                    
                     data="$(audio_recog "$DT_r/info.flac" $lgt $lgt $apikeygo)"
                     
@@ -126,80 +131,88 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     |sed 's/}],"final":true}],"result_index":0}//g')"
 
                 else
-                    trgt="$(sed -n ${n}p "$DT_r/index" |sed 's/^\s*./\U&\E/g')"
+                    trgt="$(sed -n ${erw}p "$DT_r/index" |sed 's/^\s*./\U&\E/g')"
                 fi
-    
-                if [ ${#trgt} -ge 400 ]; then
-                    echo -e "\n$n) [$(gettext "Sentence too long")] $trgt" >> "$DT_r/slog"
+
+                if [ -f "$DT_r/translation" ]; then
+                    export srce="$(sed -n ${erw}p "$DT_r/translation" |sed 's/^\s*./\U&\E/g')"
+                else
+                    export trgt=$(clean_2 "${trgt}")
+                    srce="$(translate "${trgt}" $lgt $lgs |sed ':a;N;$!ba;s/\n/ /g')"
+                    export srce="$(clean_2 "${srce}")"
+                fi
+
+                rm -f "$DT_r/info.flac" "$DT_r/info.ret"
+            fi
+            echo "${trgt}" >> "$DT_r/trgt"
+            echo "${srce}" >> "$DT_r/srce"
+            echo "$((100*erw/lns))"
+            echo "# ${trgt:0:35}..." ;
+            let erw++
+        done
+        ) | dlg_progress_2
+        
+        # ----
+        erw=1
+        while [[ ${erw} -le ${lns} ]]; do
+            unset trgt; unset _item
+            trgt="$(sed -n ${erw}p "$DT_r/trgt")"
+            srce="$(sed -n ${erw}p "$DT_r/srce")"
+            
+             if [ ${#trgt} -ge 400 ]; then
+                    echo -e "$(gettext "Sentence too long")\n$erw) $trgt\n\n" >> "$DT_r/slog"
                 elif [ -z "$trgt" ]; then
-                    trgt="$n) ..."
+                    trgt="$erw) ..."
                     export cdid="$(set_name_file 2 "${trgt}" "" "" "" "" "")"
                     index 2
-                    mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
-                    echo -e "\n$n) [$(gettext "Text missing")]" >> "$DT_r/slog"
+                    mv -f "$DT_r/${erw}.mp3" "${DM_tlt}/$cdid.mp3"
+                    echo -e "$(gettext "Text missing:")\n$trgt\n\n" >> "$DT_r/slog"
+                    
                 elif [[ $(wc -l < "${DC_tlt}/data") -ge 200 ]]; then
-                    echo -e "\n$n) $trgt [$(gettext "Maximum number of notes has been exceeded")]" >> "$DT_r/slog"
+                    echo -e "$(gettext "Maximum number of notes has been exceeded")\n$erw) $trgt\n\n" >> "$DT_r/slog"
+                    
                 else
-                    if [ -f "$DT_r/translation" ]; then
-                        export srce="$(sed -n ${n}p "$DT_r/translation" |sed 's/^\s*./\U&\E/g')"
-                    else
-                        export trgt=$(clean_2 "${trgt}")
-                        srce="$(translate "${trgt}" $lgt $lgs |sed ':a;N;$!ba;s/\n/ /g')"
-                        export srce="$(clean_2 "${srce}")"
-                    fi
-                fi
-                
-                if [ $(wc -${c} <<< "${trgt}") -eq 1 ]; then
+                    if [ $(wc -${c} <<< "${trgt}") -eq 1 ]; then
                     export trgt="$(clean_1 "${trgt}")"
                     export srce="$(clean_1 "${srce}")"
                     export cdid="$(set_name_file 1 "${trgt}" "${srce}" "" "" "" "" "")"
                     audio="${trgt,,}"
                     mksure "${trgt}" "${srce}"
-                    #if [ $? = 0 ]; then
+                    if [ $? = 0 ]; then
                         index 1
-                        mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
+                        mv -f "$DT_r/${erw}.mp3" "${DM_tlt}/$cdid.mp3"
                         echo "${trgt}" >> "$DT_r/addw"
-                    #else
-                        #echo -e "\n$n) $trgt" >> "$DT_r/wlog"
-                    #fi 
+                    else
+                        echo -e "$erw) $trgt\n\n" >> "$DT_r/wlog"
+                    fi 
+
                 elif [ $(wc -${c} <<< "$trgt") -ge 1 ]; then
-                    ( export DT_r; sentence_p 1
-                    export cdid="$(set_name_file 2 "${trgt}" "${srce}" "" "" "${wrds}" "${grmr}")"
-                    mksure "${trgt}" "${srce}" "${wrds}" "${grmr}"
-                        #if [ $? = 0 ]; then
-                            index 2
-                            mv -f "$DT_r/${n}.mp3" "${DM_tlt}/$cdid.mp3"
-                            echo "${trgt}" >> "$DT_r/adds"
-                            ( fetch_audio "$aw" "$bw" )
-                        #else
-                            #echo -e "\n$n) $trgt" >> "$DT_r/slog"
-                        #fi
-                    rm -f "$aw" "$bw" )
+                    ( 
+                        export DT_r; sentence_p 1
+                        export cdid="$(set_name_file 2 "${trgt}" "${srce}" "" "" "${wrds}" "${grmr}")"
+                        mksure "${trgt}" "${srce}" "${wrds}" "${grmr}"
+                            if [ $? = 0 ]; then
+                                index 2
+                                mv -f "$DT_r/${erw}.mp3" "${DM_tlt}/$cdid.mp3"
+                                echo "${trgt}" >> "$DT_r/adds"
+                                ( fetch_audio "$aw" "$bw" )
+                            else
+                                echo -e "$erw) $trgt" >> "$DT_r/slog"
+                            fi
+                        rm -f "$aw" "$bw" 
+                    )
                 fi
-                    
-                rm -f "$DT_r/info.flac" "$DT_r/info.ret"
-            else
-                continue
             fi
             
-            echo $((100*n/lns-1))
-            echo "# ${trgt:0:35}..." ;
-            let n++
+            let erw++
         done
-        ) | dlg_progress_2
-        if  [ $? != 0 ]; then
-            "$DS/stop.sh" 5
-        fi
-        a=$(sed '/^$/d' "$DT_r/addw" |wc -l)
-        b=$(sed '/^$/d' "$DT_r/wlog" |wc -l)
-        wadds=" $((a-b))"
+
+        wadds=$(sed '/^$/d' "$DT_r/addw" |wc -l)
         W=" $(gettext "words")"
         if [ ${wadds} = 1 ]; then
             W=" $(gettext "word")"
         fi
-        a=$(sed '/^$/d' "$DT_r/adds" |wc -l)
-        b=$(sed '/^$/d' "$DT_r/swlog" |wc -l)
-        sadds=" $((a-b))"
+        sadds=$(sed '/^$/d' "$DT_r/adds" |wc -l)
         S=" $(gettext "sentences")"
         if [ ${sadds} = 1 ]; then
             S=" $(gettext "sentence")"
@@ -209,9 +222,8 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         if [ ${adds} -ge 1 ]; then
             notify-send -i idiomind "$tpe" \
             "$(gettext "Have been added:")\n$sadds$S$wadds$W" -t 2000 &
-            echo "adi.$adds.adi" >> "$DC_s/log"
         fi
-        [ -n "$_log" ] && echo "$_log" >> "${DC_tlt}/err"
+        [ -n "$_log" ] && echo "$_log" >> "${DC_tlt}/note.err"
         cleanups "$DT_r" "$DT/n_s_pr"
     fi
     exit 0

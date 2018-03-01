@@ -1,7 +1,7 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
-! [ "$DC_a/whtr.cfg" ] && touch "$DC_a/whtr.cfg"
+[ ! -f "$DC_a/whtr.cfg" ] && touch "$DC_a/whtr.cfg"
 act=$(grep -o act=\"[^\"]* "$DC_a/whtr.cfg" |grep -o '[^"]*$')
 
 function addwords() {

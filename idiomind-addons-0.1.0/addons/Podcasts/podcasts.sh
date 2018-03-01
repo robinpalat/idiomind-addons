@@ -70,6 +70,7 @@ function dlg_config() {
     apply() {
         echo -e "${CNFG}" |sed 's/|/\n/g' |sed -n 2,14p | \
         sed 's/^ *//; s/ *$//g' > "$DT/podcasts.tmp"
+        
         n=1; echo
         while read feed; do
             declare mod${n}="${feed}"
@@ -85,9 +86,9 @@ function dlg_config() {
                 "$DSP/podcasts.sh" set_channel "${!mod}" ${n} & fi
             ((n=n+1))
         done < "$DT/podcasts.tmp"
-        echo
+        
         podcasts_tmp="$(cat "$DT/podcasts.tmp")"
-        if [ -n "$podcasts_tmp" ] && [[ "$podcasts_tmp" != "$(cat "$DCP/feeds.lst")" ]]; then
+        if [[ "$podcasts_tmp" != "$(cat "$DCP/feeds.lst")" ]]; then
         mv -f "$DT/podcasts.tmp" "$DCP/feeds.lst"; else rm -f "$DT/podcasts.tmp"; fi
         val1=$(cut -d "|" -f17 <<< "$CNFG")
         val2=$(cut -d "|" -f19 <<< "$CNFG")
@@ -230,8 +231,7 @@ function update() {
                     sleep 1; else break; fi
             done
         fi
-        check_file "$DCP/1.lst" "$DCP/2.lst" \
-        "$DCP/.1.lst" "$DCP/.2.lst"
+        check_file "$DCP/1.lst" "$DCP/2.lst" "$DCP/.1.lst" "$DCP/.2.lst"
 
         if [ -e "$updt" ] && [[ ${1} = 1 ]]; then
             msg_4 "$(gettext "Wait until it finishes a previous process")." \
@@ -271,12 +271,17 @@ function update() {
     }
 
     mediatype() {
+        ex=0
         if echo "$1" |grep -q ".mp3"; then ex=mp3; tp=aud
         elif echo "$1" |grep -q ".mp4"; then ex=mp4; tp=vid
         elif echo "$1" |grep -q ".ogg"; then ex=ogg; tp=aud
         elif echo "$1" |grep -q ".m4v"; then ex=m4v; tp=vid
         elif echo "$1" |grep -q ".mov"; then ex=mov; tp=vid
         elif echo "$1" |grep -o ".pdf"; then ex=pdf; tp=txt
+        elif echo "${1,,}" |grep -q ".jpg"; then ex=jpg
+        elif echo "${1,,}" |grep -o ".png"; then ex=png
+        elif echo "${1,,}" |grep -q ".jpeg"; then ex=jpeg
+        elif echo "${1,,}" |grep -o ".gif"; then ex=gif
         export ex tp
         else
         echo -e "$(gettext "Could not add some podcasts:")\n$FEED" >> "$DM_tl/Podcasts/.conf/feed.err"
@@ -297,11 +302,17 @@ function update() {
         \r<source src=\"$fname.$ex\" type=\"audio/mpeg\">
         \rYour browser does not support the audio tag.</audio><br><br>
         \r$summary<br><br></div>"
-        text="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+        text1="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
         \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
         \r<body><br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
         \r<div class=\"summary\"><div class=\"image\">
         \r<img src=\"$fname.jpg\" alt=\"Image\" style=\"width:650px\"></div><br>
+        \r$summary<br><br></div>
+        \r</body>"
+        text2="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
+        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
+        \r<body><br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
+        \r<div class=\"summary\"><br>
         \r$summary<br><br></div>
         \r</body>"
         if [[ ${tp} = vid ]]; then
@@ -310,6 +321,10 @@ function update() {
             echo -e "${video}" |sed -e 's/^[ \t]*//' |tr -d '\n' > "$itm"
         elif [[ ${tp} = aud ]]; then
             echo -e "${audio}" |sed -e 's/^[ \t]*//' |tr -d '\n' > "$itm"
+        elif [[ ${tp} = txt_img ]]; then
+            echo -e "${text1}" |sed -e 's/^[ \t]*//' |tr -d '\n' > "$itm"
+        elif [[ ${tp} = txt ]]; then
+            echo -e "${text2}" |sed -e 's/^[ \t]*//' |tr -d '\n' > "$itm"
         fi
     }
 
@@ -360,7 +375,9 @@ function update() {
     fetch_podcasts() {
         n=0; d=0
         for ln in {1..12}; do
+            if [ -f "$DCP/${ln}.rss" ]; then
             FEED=$(grep -o "url"=\"[^\"]* "$DCP/${ln}.rss" |grep -o '[^"]*$')
+            else continue; fi
             pporc=$((cntfeeds*downloads))
             if [ ! -z "$FEED" ]; then
                 echo -e "\n  -- updating $FEED\n"
@@ -373,7 +390,7 @@ function update() {
                         val=$(grep -o "$get"=\"[^\"]* "$DCP/${ln}.rss" |grep -o '[^"]*$')
                         declare $get="$val"
                     done
-                    if [ -z "${nmedia}" ]; then
+                    if [ -z "${nmedia}" -a "${ntype}" = 1 ]; then
                         echo -e "  -- no-media! $FEED\n"
                         > "$DCP/${ln}.rss"
                         echo -e "$(gettext "Please, reconfigure this feed:")\n$FEED" >> "$DCP/feed.err"
@@ -437,8 +454,8 @@ function update() {
                                     taskItem="$lbltp ${ttitle}"
                                     [  $(wc -c <<< $ttitle) -gt 60 ] && \
                                     taskItem="$lbltp ${ttitle:0:60}..."
-                                    if ! grep -Fxq "${taskItem}" "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
-                                        echo "${taskItem}" >> "$DC_a/Podcasts.tasks"
+                                    if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
+                                        echo -e "${taskItem}" >> "$DC_a/Podcasts.tasks"
                                     fi
                                     
                                     if grep '^$' "$DCP/1.lst"; then
@@ -458,6 +475,100 @@ function update() {
                                 fi
                             fi
                         done <<< "${podcast_items}"
+                        
+                    elif [ "$ntype" = 2 ]; then
+                  
+                        curl "${FEED}" > "$DT/out.xml"
+                       
+                        if grep '^$' "$DT/out.xml"; then
+                            sed -i '/^$/d' "$DT/out.xml"
+                        fi
+                        podcast_items="$(xsltproc "/usr/share/idiomind/default/tmpl4.xml" "/tmp/.idiomind-rovym/out.xml")"
+                        podcast_items="$(echo -e "${podcast_items}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
+                        podcast_items="$(echo "${podcast_items}" | tr '\n' ' ' \
+                        | tr -s '[:space:]' | sed 's/EOL/\n/g' | head -n ${downloads})"
+                        podcast_items="$(echo "${podcast_items}" | sed '/^$/d')"
+
+                        while read -r item; do
+                            fields="$(sed -r 's|-\!-|\n|g' <<< "${item}")"
+                            if [[ -n ${nimage} ]]; then
+                                image=$(sed -n ${nimage}p <<< "${fields}")
+                            else
+                                image=0
+                            fi
+                            title=$(echo "${fields}" | sed -n ${ntitle}p | sed 's/\://g' \
+                            | sed 's/\&quot;/\"/g' | sed "s/\&#39;/\'/g" \
+                            | sed 's/\&/and/g' | sed 's/^\s*./\U&\E/g' \
+                            | sed 's/<[^>]*>//g' | sed 's/^ *//; s/ *$//; /^$/d')
+                            summary=$(echo "${fields}" | sed -n ${nsumm}p)
+                            fname="$(nmfile "${title}")"
+                            
+                            if [[ ${#title} -ge 300 ]] || [ -z "$title" ]; then
+                                continue
+                            fi
+                            if ! grep -Fxo "${title}" < <(cat "$DCP/1.lst" "$DCP/2.lst" "$DCP/old.lst"); then
+
+                                if [ ! -d "$DMC" ]; then
+                                    break; exit 1
+                                fi
+                                
+                                if [ ! -d "$DT_r" ]; then
+                                    export DT_r="$(mktemp -d "$DT/XXXXXX.dl_poddir")"; cd "$DT_r"
+                                fi
+                                cd "$DT_r"
+                                
+                                if echo "$image" |grep -q "http" && [[ ${image} != 0 ]]; then
+                                    enclosure_url=$(curl -sILw %"{url_effective}" --url "$image" |tail -n 1)
+                                    mediatype "$enclosure_url"
+                                    wget -q -c -T 51 -O ./"image.$ex" "$enclosure_url"
+                                fi
+             
+                                if [ -f ./"image.$ex" ]; then
+                                    tp=txt_img
+                                    yad --text="image.$ex"
+                                    mv -f ./"media.$ex" "$DMC/$fname.$ex"
+                                else
+                                    tp=txt
+                                fi
+                                export tp
+
+                                mkhtml
+                                if [[ -s "$DCP/1.lst" ]]; then
+                                    sed -i -e "1i${title}\\" "$DCP/1.lst"
+                                else 
+                                    echo "${title}" > "$DCP/1.lst"
+                                fi
+                                
+                                lbltp="$(gettext "Read:")"
+
+                                ttitle="$(sed 's/\$/\\$/g' <<< "$title")"
+                                taskItem="$lbltp ${ttitle}"
+                                [  $(wc -c <<< $ttitle) -gt 60 ] && \
+                                taskItem="$lbltp ${ttitle:0:60}..."
+                                if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
+                                    echo -e "${taskItem}" >> "$DC_a/Podcasts.tasks"
+                                fi
+                                
+                                if grep '^$' "$DCP/1.lst"; then
+                                    sed -i '/^$/d' "$DCP/1.lst"
+                                fi
+                                echo "${title}" >> "$DCP/.1.lst"
+                                echo "${title}" >> "$DT_r/log"
+                                echo -e "channel=\"${channel}\"
+                                \rlink=\"${link}\"
+                                \rtitle=\"${title}\"" \
+                                |sed -e 's/^[ \t]*//' \
+                                |tr -d '\n' > "$DMC/$fname.item"
+                                let d++
+                                echo -e "<b>$(gettext "Downloading")</b>
+                                \r$(gettext "Latest downloads:") $d" \
+                                |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
+                               
+                            fi
+                        done <<< "${podcast_items}"
+                        
+                        
+                        
                     fi
                 fi
             else
@@ -487,7 +598,7 @@ function update() {
         done < <(cat "$DCP/1.lst" "$DCP/2.lst")
         while read r_item; do
             r_file=$(basename "$r_item" |sed "s/\(.*\).\{4\}/\1/" |tr -d '.')
-            if ! grep -Fxq "${r_file}" "$DT/nmfile"; then
+            if ! grep -Fxq "${r_file}" < "$DT/nmfile"; then
                 cleanups "$DMC/$r_item"
             fi
         done < <(find "$DMC" -type f)
@@ -547,7 +658,7 @@ function update() {
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
         if [ $(cat "$DC_a/Podcasts.tasks" |wc -l) -gt 8 ]; then
-            awk '!x[$0]++' "$DC_a/Podcasts.tasks" |tail -n 8 > "$DT/Podcasts.tasks"
+            tail -n 8 "$DC_a/Podcasts.tasks" > "$DT/Podcasts.tasks"
             mv -f "$DT/Podcasts.tasks" "$DC_a/Podcasts.tasks"
         fi
         removes
@@ -569,7 +680,8 @@ function update() {
         fi
     fi
     exit
-} >/dev/null 2>&1
+} 
+#>/dev/null 2>&1
 
 
 
@@ -578,7 +690,7 @@ function vwr() {
     dir="$DM_tl/Podcasts/cache"
     fname=$(echo -n "${item}" | md5sum | rev | cut -c 4- | rev)
     channel="$(grep -o channel=\"[^\"]* "$dir/${fname}.item" |grep -o '[^"]*$')"
-    if grep -Fxo "${item}" "$DM_tl/Podcasts/.conf/2.lst"; then
+    if grep -Fxo "${item}" < "$DM_tl/Podcasts/.conf/2.lst"; then
         btnlabel="!list-remove!$(gettext "Remove from favorites")"
         btncmd="$DSP/cnfg.sh 'remove_item'"
     else
@@ -617,14 +729,20 @@ function set_channel() {
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items1="$(echo "${xml}"  |tr '\n' ' ' \
     | tr -s '[:space:]' |sed 's/EOL/\n/g' |sed -r 's|-\!-|\n|g')"
-    # content
+    # content t1
     xml="$(xsltproc "$DS/default/tmpl2.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items2="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
+    
+    # content t2
+    xml="$(xsltproc "$DS/default/tmpl4.xml" "$DT/rss.xml")"
+    xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
+    items4="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
+    | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
 
     fchannel() {
-        n=1;
+        n=1
         while read -r get; do
             if [ $(wc -w <<< "${get}") -ge 1 -a -z "${name}" ]; then name="${get}"; n=2; fi
             if [ -n "$(grep 'http:/' <<< "${get}")" -a -z "${link}" ]; then link="${get}"; n=3; fi
@@ -632,6 +750,7 @@ function set_channel() {
             let n++
         done <<< "${items1}"
     }
+    # --------------------------------------
     ftype1() {
         n=1
         while read -r get; do
@@ -649,47 +768,52 @@ function set_channel() {
         if [ $(wc -w <<< "${f5}") -ge 2 ]; then sum2=5; fi
         if [ $(wc -w <<< "${f6}") -ge 2 ]; then sum2=6; fi
     }
+    
     ftype2() {
         n=1
         while read -r get; do
             if [ -n "$(grep -o -E '\.jpg|\.jpeg|\.png' <<< "${get}")" -a -z "${image}" ]
-            then image="$n"; type=2; break; fi
+            then image="$n"; fi
             let n++
-        done <<< "${items3}"
-        n=4
+        done <<< "${items4}"
+        
+        n=3
         while read -r get; do
             if [ $(wc -w <<< "${get}") -ge 1 -a -z "${title}" ]; then title="$n"; break; fi
             let n++
-        done <<< "{$items3}"
+        done <<< "{$items4}"
+        
         n=6
         while read -r get; do
-            if [ $(wc -w <<< "${get}") -ge 1 -a -z "${summ}" ]; then summ="$n"; break; fi
+            if [ $(wc -w <<< "${get}") -ge 1 -a -z "${summ}" ]; then summ="$n"; type=2; break; fi
             let n++
-        done <<< "${items3}"
+        done <<< "${items4}"
     }
-    get_summ() {
-        n=1
-        while read -r get; do
-            if [ $(wc -w <<< "${get}") -ge 1 ]; then summ="$n"; break; fi
-            let n++
-        done <<< "${items3}"
-    }
+
     fchannel
+    
     ftype1
+    
+    if [[ ${type} != 1 ]]; then
+        ftype2
+    fi
+    
+    # --------------------------------------
     if [ -z "$sum2" ]; then
         summary="${sum1}"
     else
         summary="${sum2}"
     fi
-    if [[ -z "${title}" ]] || [[ -z "${media}" ]] || [[ -z "${feed_dest}" ]]; then
+    if [[ -z "${title}" ]]; then
         type=3
     fi
+
     title=$(echo "${title}" | sed 's/\://g' \
     | sed 's/\&quot;/\"/g' | sed "s/\&#39;/\'/g" \
     | sed 's/\&/and/g' | sed 's/^\s*./\U&\E/g' \
     | sed 's/<[^>]*>//g' | sed 's/^ *//; s/ *$//; /^$/d')
 
-    if [[ ${type} = 1 ]]; then
+    if [[ ${type} = 1 ]] || [[ ${type} = 2 ]]; then
         cfg="channel=\"$name\"
         \rlink=\"$link\"
         \rlogo=\"$logo\"
@@ -831,7 +955,7 @@ function tasks() {
 function new_item() {
     DMC="$DM_tl/Podcasts/cache"
     DCP="$DM_tl/Podcasts/.conf"
-    if ! grep -Fx "${item}" "$DCP/2.lst"; then
+    if ! grep -Fx "${item}" < "$DCP/2.lst"; then
         fname="$(nmfile "${item}")"
         if [ -s "$DCP/2.lst" ]; then
             sed -i -e "1i$item\\" "$DCP/.2.lst"
@@ -867,8 +991,8 @@ function save_as() {
 function remove_item() {
     touch "$DT/ps_lk"
     fname="$(nmfile "${item}")"
-    if grep -Fxo "$item" "$DCP/2.lst"; then
-        if ! grep -Fxo "$item" "$DCP/1.lst"; then
+    if grep -Fxo "$item" < "$DCP/2.lst"; then
+        if ! grep -Fxo "$item" < "$DCP/1.lst"; then
             msg_2 "$(gettext "Are you sure you want to delete this episode from favorites?")\n" edit-delete "$(gettext "Yes")" "$(gettext "Cancel")" "$(gettext "Confirm")"
             ret="$?"
             if [ $ret -eq 0 ]; then

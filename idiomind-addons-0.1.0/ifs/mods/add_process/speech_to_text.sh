@@ -108,6 +108,7 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         echo "# $(gettext "Processing... Wait.")";
         erw=1
         while [[ ${erw} -le ${lns} ]]; do
+            [ ! -f "$DT/n_s_pr" ] && break
             unset trgt; unset _item
             
             if [ -f "$DT_r/${erw}.mp3" ]; then
@@ -155,6 +156,7 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         # ----
         erw=1
         while [[ ${erw} -le ${lns} ]]; do
+            [ ! -f "$DT/n_s_pr" ] && break
             unset trgt; unset _item
             trgt="$(sed -n ${erw}p "$DT_r/trgt")"
             srce="$(sed -n ${erw}p "$DT_r/srce")"

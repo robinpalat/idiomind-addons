@@ -401,7 +401,7 @@ function update() {
                         if grep '^$' "$DT/out.xml"; then
                             sed -i '/^$/d' "$DT/out.xml"
                         fi
-                        podcast_items="$(xsltproc "$DS/default/tmpl2.xml" "$DT/out.xml")"
+                        podcast_items="$(xsltproc "$DS/default/tp1.xml" "$DT/out.xml")"
                         podcast_items="$(echo -e "${podcast_items}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
                         podcast_items="$(echo "${podcast_items}" | tr '\n' ' ' \
                         | tr -s '[:space:]' | sed 's/EOL/\n/g' | head -n ${downloads})"
@@ -483,7 +483,7 @@ function update() {
                         if grep '^$' "$DT/out.xml"; then
                             sed -i '/^$/d' "$DT/out.xml"
                         fi
-                        podcast_items="$(xsltproc "/usr/share/idiomind/default/tmpl4.xml" "/tmp/.idiomind-rovym/out.xml")"
+                        podcast_items="$(xsltproc "$DS/default/tp2.xml" "$DT/out.xml")"
                         podcast_items="$(echo -e "${podcast_items}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
                         podcast_items="$(echo "${podcast_items}" | tr '\n' ' ' \
                         | tr -s '[:space:]' | sed 's/EOL/\n/g' | head -n ${downloads})"
@@ -725,18 +725,18 @@ function set_channel() {
     # head
     feed_dest="$(curl -Ls -o /dev/null -w %{url_effective} "${feed}")"
     curl "${feed_dest}" |sed '1{/^$/d}' > "$DT/rss.xml"
-    xml="$(xsltproc "$DS/default/tmpl1.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DS/default/ch.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items1="$(echo "${xml}"  |tr '\n' ' ' \
     | tr -s '[:space:]' |sed 's/EOL/\n/g' |sed -r 's|-\!-|\n|g')"
     # content t1
-    xml="$(xsltproc "$DS/default/tmpl2.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DS/default/tp1.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items2="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
     
     # content t2
-    xml="$(xsltproc "$DS/default/tmpl4.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DS/default/tp2.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items4="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"

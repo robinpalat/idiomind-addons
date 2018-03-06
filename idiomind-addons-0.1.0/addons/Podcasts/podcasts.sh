@@ -19,6 +19,38 @@ downloads=2
 rsync_delete=0
 eyed3_encoding=utf8
 
+
+function dlg_links() {
+    
+    dlg="$(cat "$DSP/${tlng}.lst" |yad --list \
+    --title="$(gettext "Suggested podcasts and RSS")" \
+    --name=Idiomind --class=Idiomind  \
+    --print-all --print-column=3 \
+    --always-print-result --separator="|" \
+    --window-icon=idiomind \
+    --expand-column=0 --hide-column=3 \
+    --center --on-top --no-headers \
+    --width=450 --height=430 --borders=5 \
+    --column="":IMG \
+    --column="$(gettext "Pubscribe")":CHK \
+    --column="":TEXT \
+    --column="":TEXT \
+    --column="":TEXT \
+    --button="$(gettext "Save")":0 \
+    --button="$(gettext "Cancel")":1)"
+    ret=$?
+    if [ ${ret} = 0 ]; then
+        echo "${dlg}" |while read -r sel; do
+            if echo "${sel}" |grep -q 'TRUE'; then
+                sel="$(cut -f3 -d'|' <<< "${sel}" |sed 's/^ *//; s/ *$//g')"
+                if ! grep -Fo "${sel}" < "$DCP/feeds.lst" >/dev/null 2>&1; then
+                    echo "${sel}" >> "$DT/podcasts.tmp"
+                fi
+            fi
+        done
+    fi
+}
+
 function dlg_config() {
     f=0; cfg=0
     sets=( 'update' 'sync' 'synf' 'path' \
@@ -69,10 +101,10 @@ function dlg_config() {
     fi
     apply() {
         echo -e "${CNFG}" |sed 's/|/\n/g' |sed -n 2,14p | \
-        sed 's/^ *//; s/ *$//g' > "$DT/podcasts.tmp"
+        sed 's/^ *//; s/ *$//g' |sed '/^$/d' >> "$DT/podcasts.tmp"
         
-        n=1; echo
-        while read feed; do
+        n=1
+        while read -r feed; do
             declare mod${n}="${feed}"
             mod="mod${n}"; url="url${n}"
             if [ ! -e "$DCP/${n}.rss" -a -n "${!mod}" ]; then
@@ -113,18 +145,18 @@ function dlg_config() {
         ( sleep 2 && msg "$e\n\t" dialog-information "$(gettext "Errors found")" ) &
         fi
     LANGUAGE_TO_LEARN="$(gettext ${tlng})"
-    CNFG="$(yad --form --title="$(gettext "Configure podcasts to learn") $LANGUAGE_TO_LEARN" \
+    CNFG="$(yad --form --title="$(gettext "Podcast")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
     --width=520 --height=340 --borders=8 \
-    --field="$(gettext "URLs")":LBL " " \
+    --field="$(gettext "Configure feed url from either podcast or any convenient news source")\n":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
     --field="" "${url7}" --field="" "${url8}" --field="" "${url9}" \
     --field="" "${url10}" --field="" "${url11}" --field="" "${url12}" \
-    --field="$(gettext "Search Podcasts")":FBTN "$DSP/podcasts.sh 'disc_podscats'" \
+    --field="$(gettext "Suggested Contents")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
     --field="":LBL " " \
     --field="\n":LBL " " \
     --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
@@ -307,13 +339,13 @@ function update() {
         \r<body><br><br><div class=\"txttle\"><h2><b><a href=\"$link\">$title</a></b></h2></div><br>
         \r<div class=\"txtsum\"><div class=\"image\">
         \r<img src=\"img${fname}.${ex}\" alt=\"Image\" style=\"width:650px\"></div><br>
-        \r$summary</div><br><br><div class=\"txttradsum\"><i><b>$titlesrce</b><br><br>$sumarysrce</i><br><br></div>
+        \r$summary</div><br><br><div class=\"txttradsum\"><b>$titlesrce</b><br><br>$sumarysrce<br><br></div>
         \r</body>"
         text2="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
         \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
         \r<body><br><br><div class=\"txttle\"><h2><b><a href=\"$link\">$title</a></b></h2></div><br>
         \r<div class=\"txtsum\">
-        \r$summary</div><br><br><div class=\"txttradsum\"><i><b>$titlesrce</b><br><br>$sumarysrce</i><br><br></div>
+        \r$summary</div><br><br><div class=\"txttradsum\"><b>$titlesrce</b><br><br>$sumarysrce<br><br></div>
         \r</body>"
         if [[ ${tp} = vid ]]; then
             if [ $ex = m4v -o $ex = mp4 ]; then t=mp4
@@ -1072,6 +1104,8 @@ case "$1" in
     podmode "$@" ;;
     viewer)
     vwr ;;
+    dlg_links)
+    dlg_links ;;
     set_channel)
     set_channel "$@" ;;
     sync)

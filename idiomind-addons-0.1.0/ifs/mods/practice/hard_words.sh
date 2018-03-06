@@ -7,14 +7,14 @@ act=$(grep -o act=\"[^\"]* "$DC_a/whtr.cfg" |grep -o '[^"]*$')
 function addwords() {
     local name
     name="$(grep -o name=\"[^\"]* "$DC_a/whtr.cfg" |grep -o '[^"]*$')"
+    name="${name^}"
     if [ -z "$name" ]; then return; fi
 
     if [ ! -d "${DM_tl}/${name}" ]; then
-        "$DS/add.sh" new_topic 1 0 "$name"
+        "$DS/add.sh" new_topic 1 0 "${name}"
     fi
     
     if [ -d "${DM_tl}/${name}/.conf" -a "${name}" != "${tpc}" ]; then
-
         export datafilea="${DC_tlt}/data"
         export logfile="${DC_tlt}/practice/log3"
         export datafileb="${DM_tl}/${name}/.conf/data"
@@ -24,7 +24,9 @@ function addwords() {
         export lblerr=$(gettext "Maximum number of notes has been exceeded:")
 
         python <<PY
-import os, re, sqlite3 
+import os, re, sqlite3, sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
 logfile = os.environ['logfile']
 errfilew = os.environ['errfilew']
 lblerr = os.environ['lblerr']
@@ -65,7 +67,8 @@ db.close()
 indexfile.close()
 datafilew.close()
 PY
-        
+
+    touch "${DM_tl}/${name}"
     fi
 }
 

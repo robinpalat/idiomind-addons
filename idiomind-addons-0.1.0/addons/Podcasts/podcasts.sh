@@ -171,9 +171,9 @@ function podmode() {
     fdit=$(mktemp "$DT/fdit.XXXXXX")
     c=$(echo $(($RANDOM%100000))); KEY=$c
     if [ -d "$DT"/*.dl_poddir ]; then
-        info="$(gettext "Downloading new episodes...")"
+        info="$(gettext "Podcasts / Downloading...")"
     elif [ -e ${updt} ]; then
-        info="$(gettext "Checking for new episodes...")"
+        info="$(gettext "Podcasts / Checking... )")"
     else
         info="$(gettext "Podcasts")"
     fi
@@ -291,29 +291,29 @@ function update() {
     mkhtml() {
         itm="$DMC/$fname.html"
         video="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
+        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
         \r<video width=640 height=380 controls>
         \r<source src=\"$fname.$ex\" type=\"video/mp4\">
         \rYour browser does not support the video tag.</video>"
         audio="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
+        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
         \r<br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
         \r<div class=\"summary\"><audio controls><br>
         \r<source src=\"$fname.$ex\" type=\"audio/mpeg\">
         \rYour browser does not support the audio tag.</audio><br><br>
         \r$summary<br><br></div>"
         text1="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
-        \r<body><br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
-        \r<div class=\"summary\"><div class=\"image\">
-        \r<img src=\"$fname.jpg\" alt=\"Image\" style=\"width:650px\"></div><br>
-        \r$summary<br><br></div>
+        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
+        \r<body><br><br><div class=\"txttle\"><h2><b><a href=\"$link\">$title</a></b></h2></div><br>
+        \r<div class=\"txtsum\"><div class=\"image\">
+        \r<img src=\"img${fname}.${ex}\" alt=\"Image\" style=\"width:650px\"></div><br>
+        \r$summary</div><br><br><div class=\"txttradsum\"><i><b>$titlesrce</b><br><br>$sumarysrce</i><br><br></div>
         \r</body>"
         text2="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/vwr.css\">
-        \r<body><br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
-        \r<div class=\"summary\"><br>
-        \r$summary<br><br></div>
+        \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
+        \r<body><br><br><div class=\"txttle\"><h2><b><a href=\"$link\">$title</a></b></h2></div><br>
+        \r<div class=\"txtsum\">
+        \r$summary</div><br><br><div class=\"txttradsum\"><i><b>$titlesrce</b><br><br>$sumarysrce</i><br><br></div>
         \r</body>"
         if [[ ${tp} = vid ]]; then
             if [ $ex = m4v -o $ex = mp4 ]; then t=mp4
@@ -329,10 +329,14 @@ function update() {
     }
 
     get_images() {
-        find "$DT_r" -maxdepth 1 -type f -regextype posix-extended \
-        -iregex '.*\.(jpg|jpeg|png|JPG|JPEG|PNG)$' -delete
         
-        if [ "$tp" = aud ]; then
+        rmsure() {
+            find "$DT_r" -maxdepth 1 -type f -regextype posix-extended \
+            -iregex '.*\.(jpg|jpeg|png|JPG|JPEG|PNG)$' -delete
+        }
+        
+        if [ "$tp" = 'aud' ]; then
+            rmsure
             p=1; t=1; unset img
             eyeD3 --write-images "$DT_r" "$DT_r/media.$ex"
             img="$(ls |grep -E '.jpeg|.JPEG|.jpg|.JPG|.png|.PNG' |head -n1)"
@@ -347,7 +351,8 @@ function update() {
             if [ ! -f "$DT_r/$img" ]; then
                 cp -f "$DSP/images/audio.png" "$DMC/$fname.png"; p=0
             fi
-        elif [ "$tp" = vid ]; then
+        elif [ "$tp" = 'vid' ]; then
+            rmsure
             p=1; mplayer -ss 60 -nosound -noconsolecontrols \
             -vo jpeg -frames 3 ./"media.$ex" >/dev/null
             img="$(ls |grep -E '.jpeg|.JPEG|.jpg|.JPG|.png|.PNG' |head -n1)"
@@ -355,7 +360,14 @@ function update() {
             if [ ! -f "$DT_r/$img" ]; then
                 cp -f "$DSP/images/audio.png" "$DMC/$fname.png"; p=0
             fi
+        elif [ "$tp" = 'txt_img' -o "$tp" = 'txt' ]; then
+            t=0; p=1
+            if [ ! -f ./"image.$ex" ]; then
+                cp -f "$DSP/images/text.png" "$DMC/$fname.png"; p=0
+            fi
+            img="image.$ex"
         fi
+        
         if [ ${p} = 1 -a -f "$DT_r/$img" ]; then
             layer="$DSP/images/layer.png"
             [ ${t} = 1 ] && eyeD3 --encoding=$eyed3_encoding \
@@ -368,12 +380,16 @@ function update() {
             -layers merge +repage tmp.png
             composite -compose Dst_Over tmp.png "${layer}" "$DMC/$fname.png"
         fi
-        find "$DT_r" -maxdepth 1 -type f -regextype posix-extended \
-        -iregex '.*\.(jpg|jpeg|png|JPG|JPEG|PNG)$' -delete
+        
+        rmsure
     }
     
     fetch_podcasts() {
         n=0; d=0
+        include "$DS/ifs/mods/add"
+        source "$DS/default/sets.cfg"
+        lgt=${tlangs[$tlng]}
+        lgs=${slangs[$slng]}
         for ln in {1..12}; do
             if [ -f "$DCP/${ln}.rss" ]; then
             FEED=$(grep -o "url"=\"[^\"]* "$DCP/${ln}.rss" |grep -o '[^"]*$')
@@ -397,7 +413,7 @@ function update() {
                         continue
                     fi
                     if [ "$ntype" = 1 ]; then
-                        curl "${FEED}" > "$DT/out.xml"
+                        curl -s "${FEED}" > "$DT/out.xml"
                         if grep '^$' "$DT/out.xml"; then
                             sed -i '/^$/d' "$DT/out.xml"
                         fi
@@ -417,7 +433,7 @@ function update() {
                             summary=$(echo "${fields}" | sed -n ${nsumm}p)
                             fname="$(nmfile "${title}")"
                             
-                            if [[ ${#title} -ge 300 ]] || [ -z "$title" ]; then
+                            if [[ ${#title} -ge 300 ]] || [ -z "${title}" ]; then
                                 continue
                             fi
                             if ! grep -Fxo "${title}" < <(cat "$DCP/1.lst" "$DCP/2.lst" "$DCP/old.lst"); then
@@ -477,9 +493,7 @@ function update() {
                         done <<< "${podcast_items}"
                         
                     elif [ "$ntype" = 2 ]; then
-                  
-                        curl "${FEED}" > "$DT/out.xml"
-                       
+                        curl -s "${FEED}" > "$DT/out.xml"
                         if grep '^$' "$DT/out.xml"; then
                             sed -i '/^$/d' "$DT/out.xml"
                         fi
@@ -503,20 +517,21 @@ function update() {
                             summary=$(echo "${fields}" | sed -n ${nsumm}p)
                             fname="$(nmfile "${title}")"
                             
-                            if [[ ${#title} -ge 300 ]] || [ -z "$title" ]; then
+                            if [[ ${#title} -ge 300 ]] || [ -z "${title}" ]; then
                                 continue
                             fi
                             if ! grep -Fxo "${title}" < <(cat "$DCP/1.lst" "$DCP/2.lst" "$DCP/old.lst"); then
 
-                                if [ ! -d "$DMC" ]; then
-                                    break; exit 1
-                                fi
+                                s="$(sed 's/<[^>]*>//g' <<< "${summary}")"
+                                sumarysrce="$(translate "${s}" auto $lgs)"
+                                titlesrce="$(translate "${title}" auto $lgs)"
+
+                                if [ ! -d "$DMC" ]; then break; exit 1; fi
                                 
                                 if [ ! -d "$DT_r" ]; then
                                     export DT_r="$(mktemp -d "$DT/XXXXXX.dl_poddir")"; cd "$DT_r"
                                 fi
                                 cd "$DT_r"
-                                
                                 if echo "$image" |grep -q "http" && [[ ${image} != 0 ]]; then
                                     enclosure_url=$(curl -sILw %"{url_effective}" --url "$image" |tail -n 1)
                                     mediatype "$enclosure_url"
@@ -524,15 +539,21 @@ function update() {
                                 fi
              
                                 if [ -f ./"image.$ex" ]; then
-                                    tp=txt_img
-                                    yad --text="image.$ex"
-                                    mv -f ./"media.$ex" "$DMC/$fname.$ex"
+                                    if file ./"image.$ex" |grep -oE '\image|\bitmap|'; then
+                                        tp=txt_img
+                                        cp -f ./"image.$ex" "$DMC/img${fname}.$ex"
+                                    else
+                                        cleanups ./"image.$ex"
+                                        tp=txt
+                                    fi
                                 else
                                     tp=txt
                                 fi
+                                
                                 export tp
-
+                                get_images
                                 mkhtml
+                                
                                 if [[ -s "$DCP/1.lst" ]]; then
                                     sed -i -e "1i${title}\\" "$DCP/1.lst"
                                 else 
@@ -540,7 +561,6 @@ function update() {
                                 fi
                                 
                                 lbltp="$(gettext "Read:")"
-
                                 ttitle="$(sed 's/\$/\\$/g' <<< "$title")"
                                 taskItem="$lbltp ${ttitle}"
                                 [  $(wc -c <<< $ttitle) -gt 60 ] && \
@@ -566,9 +586,6 @@ function update() {
                                
                             fi
                         done <<< "${podcast_items}"
-                        
-                        
-                        
                     fi
                 fi
             else
@@ -772,6 +789,7 @@ function set_channel() {
     ftype2() {
         n=1
         while read -r get; do
+            echo "$get........."
             if [ -n "$(grep -o -E '\.jpg|\.jpeg|\.png' <<< "${get}")" -a -z "${image}" ]
             then image="$n"; fi
             let n++
@@ -829,7 +847,7 @@ function set_channel() {
         msg "<b>$(gettext "Specified URL doesn't seem to contain any feeds:")</b>\n$url\n" dialog-warning Idiomind &
         > "$DCP/$num.rss"
     fi
-    cleanups "$DT/rss.xml"
+    #cleanups "$DT/rss.xml"
     exit 1
 }
 

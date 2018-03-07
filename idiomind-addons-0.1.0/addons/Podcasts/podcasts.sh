@@ -21,34 +21,54 @@ eyed3_encoding=utf8
 
 
 function dlg_links() {
+
+    if [ -f "$DT/Sclk" ]; then
+        msg "$(gettext "Please wait until the current actions are finished")...\n" dialog-information
+        (sleep 50; cleanups "$DT/Sclk") & exit 1
+    fi
     
-    dlg="$(cat "$DSP/${tlng}.lst" |yad --list \
-    --title="$(gettext "Suggested podcasts and RSS")" \
+    function _list() {
+        n=7; while read -r line; do
+            [ ! -s "$DCP/${n}.rss" ] && cleanups "$DCP/${n}.rss"
+            [ -f "$DCP/${n}.rss" ] && val=TRUE || val=FALSE
+            echo -e "${line}" |sed "s/SEL/${val}/g" |tr -s '|' '\n'
+            n=$((n+1))
+        done < "$DSP/${tlng}.lst"
+    }
+    
+    dlg="$(_list |yad --list \
+    --title="$(gettext "Suggested Contents")" \
     --name=Idiomind --class=Idiomind  \
     --print-all --print-column=3 \
     --always-print-result --separator="|" \
     --window-icon=idiomind \
     --expand-column=0 --hide-column=3 \
     --center --on-top --no-headers \
-    --width=450 --height=430 --borders=5 \
+    --width=520 --height=390 --borders=8 \
     --column="":IMG \
-    --column="$(gettext "Pubscribe")":CHK \
+    --column="$(gettext "Subscribe")":CHK \
     --column="":TEXT \
     --column="":TEXT \
     --column="":TEXT \
     --button="$(gettext "Save")":0 \
     --button="$(gettext "Cancel")":1)"
     ret=$?
+
     if [ ${ret} = 0 ]; then
-        echo "${dlg}" |while read -r sel; do
+        touch "$DT/Sclk"
+        n=7; echo "${dlg}" |while read -r sel; do
             if echo "${sel}" |grep -q 'TRUE'; then
-                sel="$(cut -f3 -d'|' <<< "${sel}" |sed 's/^ *//; s/ *$//g')"
-                if ! grep -Fo "${sel}" < "$DCP/feeds.lst" >/dev/null 2>&1; then
-                    echo "${sel}" >> "$DT/podcasts.tmp"
+                lnk="$(cut -f3 -d'|' <<< "${sel}")"
+                if [ ! -f "$DCP/${n}.rss" ]; then
+                    "$DSP/podcasts.sh" set_channel "${lnk}" ${n}
                 fi
+            else
+                cleanups"$DCP/${n}.rss"
             fi
+        n=$((n+1)); [ ${n} -gt 18 ] && break
         done
     fi
+    cleanups "$DT/Sclk"
 }
 
 function dlg_config() {
@@ -100,7 +120,7 @@ function dlg_config() {
         done
     fi
     apply() {
-        echo -e "${CNFG}" |sed 's/|/\n/g' |sed -n 2,14p | \
+        echo -e "${CNFG}" |sed 's/|/\n/g' |sed -n 2,8p | \
         sed 's/^ *//; s/ *$//g' |sed '/^$/d' >> "$DT/podcasts.tmp"
         
         n=1
@@ -122,12 +142,12 @@ function dlg_config() {
         podcasts_tmp="$(cat "$DT/podcasts.tmp")"
         if [[ "$podcasts_tmp" != "$(cat "$DCP/feeds.lst")" ]]; then
         mv -f "$DT/podcasts.tmp" "$DCP/feeds.lst"; else rm -f "$DT/podcasts.tmp"; fi
-        val1=$(cut -d "|" -f17 <<< "$CNFG")
-        val2=$(cut -d "|" -f19 <<< "$CNFG")
-        val3=$(cut -d "|" -f21 <<< "$CNFG")
-        val4=$(cut -d "|" -f22 <<< "$CNFG" |sed 's|/|\\/|g')
-        val5=$(cut -d "|" -f23 <<< "$CNFG" |sed 's|/|\\/|g')
-        val6=$(cut -d "|" -f25 <<< "$CNFG" |sed 's|/|\\/|g')
+        val1=$(cut -d "|" -f11 <<< "$CNFG")
+        val2=$(cut -d "|" -f13 <<< "$CNFG")
+        val3=$(cut -d "|" -f15 <<< "$CNFG")
+        val4=$(cut -d "|" -f16 <<< "$CNFG" |sed 's|/|\\/|g')
+        val5=$(cut -d "|" -f17 <<< "$CNFG" |sed 's|/|\\/|g')
+        val6=$(cut -d "|" -f19 <<< "$CNFG" |sed 's|/|\\/|g')
         if [ ! -d "$val5" -o -z "$val5" ]; then path=FALSE; fi
         sed -i "s/update=.*/update=\"${val1}\"/g" "$DCP/podcasts.cfg"
         sed -i "s/altrau=.*/altrau=\"${val2}\"/g" "$DCP/podcasts.cfg"
@@ -145,17 +165,15 @@ function dlg_config() {
         ( sleep 2 && msg "$e\n\t" dialog-information "$(gettext "Errors found")" ) &
         fi
     LANGUAGE_TO_LEARN="$(gettext ${tlng})"
-    CNFG="$(yad --form --title="$(gettext "Podcast")" \
+    CNFG="$(yad --form --title="$(gettext "Podcasts")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=340 --borders=8 \
-    --field="$(gettext "Configure feed url from either podcast or any convenient news source")\n":LBL " " \
+    --width=520 --height=390 --borders=8 \
+    --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
-    --field="" "${url7}" --field="" "${url8}" --field="" "${url9}" \
-    --field="" "${url10}" --field="" "${url11}" --field="" "${url12}" \
     --field="$(gettext "Suggested Contents")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
     --field="":LBL " " \
     --field="\n":LBL " " \
@@ -767,8 +785,7 @@ function vwr() {
 
 function set_channel() {
     internet
-    if [[ -z "${2}" ]]; then
-    cleanups "$DCP/${3}.rss"; exit 1; fi
+    if [[ -z "${2}" ]]; then cleanups "$DCP/${3}.rss"; exit 1; fi
     feed="${2}"
     num="${3}"
     # head
@@ -879,7 +896,7 @@ function set_channel() {
         msg "<b>$(gettext "Specified URL doesn't seem to contain any feeds:")</b>\n$url\n" dialog-warning Idiomind &
         > "$DCP/$num.rss"
     fi
-    #cleanups "$DT/rss.xml"
+    cleanups "$DT/rss.xml"
     exit 1
 }
 
@@ -968,21 +985,6 @@ function sync() {
     fi
 } >/dev/null 2>&1
  
-function disc_podscats() {
-    [ "$tlng" = English ] && src="\"podcasts learning English\" OR \"$(gettext "podcasts learning English")\""
-    [ "$tlng" = French ] && src="\"podcasts learning French\" OR \"$(gettext "podcasts to learn French")\""
-    [ "$tlng" = German ] && src="\"podcasts learning German\" OR \"$(gettext "podcasts to learn German")\""
-    [ "$tlng" = Chinese ] && src="\"podcasts learning Chinese\" OR \"$(gettext "podcasts to learn Chinese")\""
-    [ "$tlng" = Italian ] && src="\"podcasts learning Italian\" OR \"$(gettext "podcasts to learn Italian")\""
-    [ "$tlng" = Japanese ] && src="\"podcasts learning Japanese\" OR \"$(gettext "podcasts to learn Japanese")\""
-    [ "$tlng" = Portuguese ] && src="\"podcasts learning Portuguese\" OR \"$(gettext "podcasts to learn Portuguese")\""
-    [ "$tlng" = Spanish ] && src="\"podcasts learning Spanish\" OR \"$(gettext "podcasts to learn Spanish")\""
-    [ "$tlng" = Vietnamese ] && src="\"podcasts learning Vietnamese\" OR \"$(gettext "podcasts to learn Vietnamese")\""
-    [ "$tlng" = Russian ] && src="\"podcasts learning Russian\" OR \"$(gettext "podcasts to learn Russian")\""
-    xdg-open https://www.google.com/search?q="$src"
-
-} >/dev/null 2>&1
-
 
 function tasks() {
     i="$(echo "$2" |sed -e 's/\.\.\.//;')"
@@ -1110,8 +1112,6 @@ case "$1" in
     set_channel "$@" ;;
     sync)
     sync "$@" ;;
-    disc_podscats)
-    disc_podscats ;;
     tasks)
     tasks "$@" ;;
     new_item)

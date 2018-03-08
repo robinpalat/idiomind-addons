@@ -21,7 +21,6 @@ eyed3_encoding=utf8
 
 
 function dlg_optns() {
-    
     cfg=0
     if [ -e "$DCP/podcasts.cfg" ]; then
         [[ $(egrep -cv '#|^$' < "$DCP/podcasts.cfg") = 8 ]] && cfg=1
@@ -32,7 +31,7 @@ function dlg_optns() {
     if [ ! -d "${path}" -o ! -n "${path}" ]; then path=/FALSE; fi
     n=0
     if [ ${cfg} = 1 ]; then
-        while [ ${n} -le 8 ]; do
+        while [ ${n} -le 7 ]; do
             get="${sets[${n}]}"
             val=$(grep -o "$get"=\"[^\"]* "$DCP/podcasts.cfg" |grep -o '[^"]*$')
             declare ${sets[${n}]}="$val"
@@ -40,7 +39,7 @@ function dlg_optns() {
         done
     else
         > "$DCP/podcasts.cfg"
-        while [ ${n} -le 8 ]; do
+        while [ ${n} -le 7 ]; do
             echo -e "${sets[${n}]}=\"\"" >> "$DCP/podcasts.cfg"
             ((n=n+1))
         done
@@ -50,7 +49,7 @@ function dlg_optns() {
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=380 --borders=8 \
+    --width=520 --height=360 --borders=8 \
     --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
     --field=" ":LBL " " \
     --field="$(gettext "Use this video player")":LBL " " \
@@ -107,7 +106,7 @@ function dlg_links() {
     --column="":TEXT \
     --column="":TEXT \
     --column="":TEXT \
-    --button="$(gettext "Save")":0 \
+    --button="$(gettext "Save")!gtk-save":0 \
     --button="$(gettext "Cancel")":1)"
     ret=$?
     if [ ${ret} = 0 ]; then
@@ -127,7 +126,7 @@ function dlg_links() {
     cleanups "$DT/Sclk"
 }
 
-function dlg_config() {
+function dlg_subs() {
    
     [ -e "$DT/cp.lock" ] && kill $(cat "$DT/cp.lock")
     echo $$ > "$DT/cp.lock"
@@ -179,7 +178,7 @@ function dlg_config() {
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=380 --borders=8 \
+    --width=520 --height=360 --borders=8 \
     --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
@@ -217,11 +216,11 @@ function podmode() {
     if [ -d "$DT"/*.dl_poddir ]; then
         info="$(gettext "Podcasts / Downloading...")"
     elif [ -e ${updt} ]; then
-        info="$(gettext "Podcasts / Checking... )")"
+        info="$(gettext "Podcasts / Updating...")"
     else
         info="$(gettext "Podcasts")"
     fi
-    cmd_sub="$DSP/cnfg.sh 'conf'"
+    cmd_sub="$DSP/cnfg.sh 'subs'"
     cmd_optns="$DSP/cnfg.sh 'optns'"
     cmd_del="$DSP/cnfg.sh 'delete_all'"
     infolabel="$(< "$DMP"/*.updt)"
@@ -463,8 +462,8 @@ function update() {
                                     taskItem="$lbltp ${ttitle}"
                                     [  $(wc -c <<< $ttitle) -gt 60 ] && \
                                     taskItem="$lbltp ${ttitle:0:60}..."
-                                    if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
-                                        echo -e "${taskItem}" >> "$DC_a/Podcasts.tasks"
+                                    if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.$tlng" >/dev/null 2>&1; then
+                                        echo -e "${taskItem}" >> "$DC_a/Podcasts.$tlng"
                                     fi
                                     
                                     if grep '^$' "$DCP/1.lst"; then
@@ -558,8 +557,8 @@ function update() {
                                 taskItem="$lbltp ${ttitle}"
                                 [  $(wc -c <<< $ttitle) -gt 60 ] && \
                                 taskItem="$lbltp ${ttitle:0:60}..."
-                                if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.tasks" >/dev/null 2>&1; then
-                                    echo -e "${taskItem}" >> "$DC_a/Podcasts.tasks"
+                                if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.$tlng" >/dev/null 2>&1; then
+                                    echo -e "${taskItem}" >> "$DC_a/Podcasts.$tlng"
                                 fi
                                 
                                 if grep '^$' "$DCP/1.lst"; then
@@ -667,9 +666,9 @@ function update() {
             notify-send -i idiomind "$(gettext "Podcasts: New content")" \
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
-        if [ $(cat "$DC_a/Podcasts.tasks" |wc -l) -gt 8 ]; then
-            tail -n 8 "$DC_a/Podcasts.tasks" > "$DT/Podcasts.tasks"
-            mv -f "$DT/Podcasts.tasks" "$DC_a/Podcasts.tasks"
+        if [ $(cat "$DC_a/Podcasts.$tlng" |wc -l) -gt 8 ]; then
+            tail -n 8 "$DC_a/Podcasts.$tlng" > "$DT/Podcasts.$tlng"
+            mv -f "$DT/Podcasts.$tlng" "$DC_a/Podcasts.$tlng"
         fi
         removes
     else
@@ -1047,6 +1046,8 @@ case "$1" in
     podmode "$@" ;;
     viewer)
     vwr ;;
+    dlg_subs)
+    dlg_subs ;;
     dlg_optns)
     dlg_optns ;;
     dlg_links)

@@ -20,13 +20,71 @@ rsync_delete=0
 eyed3_encoding=utf8
 
 
-function dlg_links() {
+function dlg_optns() {
+    
+    cfg=0
+    if [ -e "$DCP/podcasts.cfg" ]; then
+        [[ $(egrep -cv '#|^$' < "$DCP/podcasts.cfg") = 8 ]] && cfg=1
+    else 
+        > "$DCP/podcasts.cfg"
+    fi
+    sets=( 'update' 'sync' 'synf' 'path' 'eaudio' 'evideo' 'e_keep' 'altrvi' )
+    if [ ! -d "${path}" -o ! -n "${path}" ]; then path=/FALSE; fi
+    n=0
+    if [ ${cfg} = 1 ]; then
+        while [ ${n} -le 8 ]; do
+            get="${sets[${n}]}"
+            val=$(grep -o "$get"=\"[^\"]* "$DCP/podcasts.cfg" |grep -o '[^"]*$')
+            declare ${sets[${n}]}="$val"
+            ((n=n+1))
+        done
+    else
+        > "$DCP/podcasts.cfg"
+        while [ ${n} -le 8 ]; do
+            echo -e "${sets[${n}]}=\"\"" >> "$DCP/podcasts.cfg"
+            ((n=n+1))
+        done
+    fi
+    CNFG="$(yad --form --title="$(gettext "Options")" \
+    --name=Idiomind --class=Idiomind \
+    --always-print-result --print-all --separator="|" \
+    --window-icon=idiomind \
+    --scroll --on-top --mouse \
+    --width=520 --height=380 --borders=8 \
+    --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
+    --field=" ":LBL " " \
+    --field="$(gettext "Use this video player")":LBL " " \
+    --field="" "$altrvi" \
+    --field=" ":LBL " " \
+    --field="$(gettext "Sync after update")":CHK "$sync" \
+    --field="$(gettext "Sync only favorites")":CHK "$synf" \
+    --field="$(gettext "Path where episodes should be synced")":LBL " " \
+    --field="":DIR "$path" \
+    --field="$(gettext "Synchronize")":FBTN "$DSP/podcasts.sh 'sync' 2" \
+    --button="$(gettext "Save")"!gtk-save:0 \
+    --button="$(gettext "Cancel")":1)"
+    ret=$?
+    if [ $ret -eq 0 ]; then
+        val1=$(cut -d "|" -f1 <<< "$CNFG")
+        val2=$(cut -d "|" -f4 <<< "$CNFG")
+        val3=$(cut -d "|" -f6 <<< "$CNFG")
+        val4=$(cut -d "|" -f7 <<< "$CNFG" |sed 's|/|\\/|g')
+        val5=$(cut -d "|" -f9 <<< "$CNFG" |sed 's|/|\\/|g')
+        if [ ! -d "$val5" -o -z "$val5" ]; then path=FALSE; fi
+        sed -i "s/update=.*/update=\"${val1}\"/g" "$DCP/podcasts.cfg"
+        sed -i "s/altrvi=.*/altrvi=\"${val2}\"/g" "$DCP/podcasts.cfg"
+        sed -i "s/sync=.*/sync=\"${val3}\"/g" "$DCP/podcasts.cfg"
+        sed -i "s/synf=.*/synf=\"${val4}\"/g" "$DCP/podcasts.cfg"
+        sed -i "s/path=.*/path=\"${val5}\"/g" "$DCP/podcasts.cfg"
+    fi
+}
 
+function dlg_links() {
+    
     if [ -f "$DT/Sclk" ]; then
         msg "$(gettext "Please wait until the current actions are finished")...\n" dialog-information
         (sleep 50; cleanups "$DT/Sclk") & exit 1
     fi
-    
     function _list() {
         n=7; while read -r line; do
             [ ! -s "$DCP/${n}.rss" ] && cleanups "$DCP/${n}.rss"
@@ -35,7 +93,6 @@ function dlg_links() {
             n=$((n+1))
         done < "$DSP/${tlng}.lst"
     }
-    
     dlg="$(_list |yad --list \
     --title="$(gettext "Suggested Contents")" \
     --name=Idiomind --class=Idiomind  \
@@ -46,14 +103,13 @@ function dlg_links() {
     --center --on-top --no-headers \
     --width=520 --height=390 --borders=8 \
     --column="":IMG \
-    --column="$(gettext "Subscribe")":CHK \
+    --column="":CHK \
     --column="":TEXT \
     --column="":TEXT \
     --column="":TEXT \
     --button="$(gettext "Save")":0 \
     --button="$(gettext "Cancel")":1)"
     ret=$?
-
     if [ ${ret} = 0 ]; then
         touch "$DT/Sclk"
         n=7; echo "${dlg}" |while read -r sel; do
@@ -72,29 +128,7 @@ function dlg_links() {
 }
 
 function dlg_config() {
-    f=0; cfg=0
-    sets=( 'update' 'sync' 'synf' 'path' \
-    'eaudio' 'evideo' 'e_keep' 'altrau' 'altrvi' )
-    check_dir "$DM_tl/Podcasts" "$DM_tl/Podcasts/.conf" "$DM_tl/Podcasts/cache"
-    if [ ! -e "$DM_tl/Podcasts/.conf/stts" ]; then f=1
-    else 
-        [ $(< "$DM_tl/Podcasts/.conf/stts") != 11 ] && f=1
-    fi
-    if [ -e "$DCP/podcasts.cfg" ]; then
-        [[ $(egrep -cv '#|^$' < "$DCP/podcasts.cfg") = 9 ]] && cfg=1
-    else 
-        > "$DCP/podcasts.cfg"
-    fi
-    if [ ${f} = 1 ]; then
-        cd "$DM_tl/Podcasts/.conf/"
-        touch "./podcasts.cfg" "./1.lst" "./2.lst" "./feeds.lst" "./old.lst"
-        echo 11 > "$DM_tl/Podcasts/.conf/stts"
-        echo " " > "$DM_tl/Podcasts/.conf/info"
-        echo -e "\n$(gettext "Latest downloads:") 0"
-        > "$DM_tl/Podcasts/cache/.CACHEDIR"
-        > "$DM_tl/Podcasts/$date.updt"
-        "$DS/mngr.sh" mkmn 0
-    fi
+   
     [ -e "$DT/cp.lock" ] && kill $(cat "$DT/cp.lock")
     echo $$ > "$DT/cp.lock"
     touch "$DM_tl/Podcasts"
@@ -104,25 +138,10 @@ function dlg_config() {
         declare url${n}="$feed"
         ((n=n+1))
     done < "$DCP/feeds.lst"
-    n=0
-    if [ ${cfg} = 1 ]; then
-        while [ ${n} -le 8 ]; do
-            get="${sets[${n}]}"
-            val=$(grep -o "$get"=\"[^\"]* "$DCP/podcasts.cfg" |grep -o '[^"]*$')
-            declare ${sets[${n}]}="$val"
-            ((n=n+1))
-        done
-    else
-        > "$DCP/podcasts.cfg"
-        while [ ${n} -le 8 ]; do
-            echo -e "${sets[${n}]}=\"\"" >> "$DCP/podcasts.cfg"
-            ((n=n+1))
-        done
-    fi
+
     apply() {
         echo -e "${CNFG}" |sed 's/|/\n/g' |sed -n 2,8p | \
         sed 's/^ *//; s/ *$//g' |sed '/^$/d' >> "$DT/podcasts.tmp"
-        
         n=1
         while read -r feed; do
             declare mod${n}="${feed}"
@@ -142,58 +161,35 @@ function dlg_config() {
         podcasts_tmp="$(cat "$DT/podcasts.tmp")"
         if [[ "$podcasts_tmp" != "$(cat "$DCP/feeds.lst")" ]]; then
         mv -f "$DT/podcasts.tmp" "$DCP/feeds.lst"; else rm -f "$DT/podcasts.tmp"; fi
-        val1=$(cut -d "|" -f11 <<< "$CNFG")
-        val2=$(cut -d "|" -f13 <<< "$CNFG")
-        val3=$(cut -d "|" -f15 <<< "$CNFG")
-        val4=$(cut -d "|" -f16 <<< "$CNFG" |sed 's|/|\\/|g')
-        val5=$(cut -d "|" -f17 <<< "$CNFG" |sed 's|/|\\/|g')
-        val6=$(cut -d "|" -f19 <<< "$CNFG" |sed 's|/|\\/|g')
-        if [ ! -d "$val5" -o -z "$val5" ]; then path=FALSE; fi
-        sed -i "s/update=.*/update=\"${val1}\"/g" "$DCP/podcasts.cfg"
-        sed -i "s/altrau=.*/altrau=\"${val2}\"/g" "$DCP/podcasts.cfg"
-        sed -i "s/altrvi=.*/altrvi=\"${val3}\"/g" "$DCP/podcasts.cfg"
-        sed -i "s/sync=.*/sync=\"${val4}\"/g" "$DCP/podcasts.cfg"
-        sed -i "s/synf=.*/synf=\"${val5}\"/g" "$DCP/podcasts.cfg"
-        sed -i "s/path=.*/path=\"${val6}\"/g" "$DCP/podcasts.cfg"
         cleanups "$DT/cp.lock"
     }
-
-    if [ ! -d "${path}" -o ! -n "${path}" ]; then path=/FALSE; fi
-        if [ -f "$DM_tl/Podcasts/.conf/feed.err" ]; then
-        e="$(head -n 4 < "$DM_tl/Podcasts/.conf/feed.err" |sed 's/\&/\&amp\;/g' |awk '!a[$0]++')"
-        rm "$DM_tl/Podcasts/.conf/feed.err"
-        ( sleep 2 && msg "$e\n\t" dialog-information "$(gettext "Errors found")" ) &
-        fi
+    if [ -f "$DM_tl/Podcasts/.conf/feed.err" ]; then
+    e="$(head -n 4 < "$DM_tl/Podcasts/.conf/feed.err" |sed 's/\&/\&amp\;/g' |awk '!a[$0]++')"
+    rm "$DM_tl/Podcasts/.conf/feed.err"
+    ( sleep 2 && msg "$e\n\t" dialog-information "$(gettext "Errors found")" ) &
+    fi
+        
     LANGUAGE_TO_LEARN="$(gettext ${tlng})"
-    CNFG="$(yad --form --title="$(gettext "Podcasts")" \
+    CNFG="$(yad --form --title="$(gettext "Subscriptions")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=390 --borders=8 \
+    --name=Idiomind --class=Idiomind \
+    --always-print-result --print-all --separator="|" \
+    --window-icon=idiomind \
+    --scroll --on-top --mouse \
+    --width=520 --height=380 --borders=8 \
     --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
     --field="$(gettext "Suggested Contents")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
-    --field="":LBL " " \
-    --field="\n":LBL " " \
-    --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
-    --field="$(gettext "Use this audio player")":LBL " " \
-    --field="" "$altrau" \
-    --field="$(gettext "Use this video player")":LBL " " \
-    --field="" "$altrvi" \
-    --field="$(gettext "Sync after update")":CHK "$sync" \
-    --field="$(gettext "Sync only favorites")":CHK "$synf" \
-    --field="$(gettext "Path where episodes should be synced")":LBL " " \
-    --field="":DIR "$path" \
-    --field="$(gettext "Synchronize")":FBTN "$DSP/podcasts.sh 'sync' 2" \
-    --button="$(gettext "Remove")":"$DSP/cnfg.sh 'delete_all'" \
-    --button="$(gettext "Cancel")":1 \
-    --button="$(gettext "Save")":0)"
+    --button="$(gettext "Save")"!gtk-save:0 \
+    --button="$(gettext "Cancel")":1)"
     ret=$?
     if [ $ret -eq 0 ]; then apply; fi
     cleanups "$DT/cp.lock"
-    exit
+    return
 }
 
 function podmode() {
@@ -217,8 +213,6 @@ function podmode() {
         done < "$DCP/2.lst"
     }
 
-    nt="$DCP/info"
-    fdit=$(mktemp "$DT/fdit.XXXXXX")
     c=$(echo $(($RANDOM%100000))); KEY=$c
     if [ -d "$DT"/*.dl_poddir ]; then
         info="$(gettext "Podcasts / Downloading...")"
@@ -227,6 +221,9 @@ function podmode() {
     else
         info="$(gettext "Podcasts")"
     fi
+    cmd_sub="$DSP/cnfg.sh 'conf'"
+    cmd_optns="$DSP/cnfg.sh 'optns'"
+    cmd_del="$DSP/cnfg.sh 'delete_all'"
     infolabel="$(< "$DMP"/*.updt)"
     _list_1 | yad --list --tabnum=1 \
     --plug=$KEY --print-all \
@@ -242,11 +239,14 @@ function podmode() {
     --ellipsize=end --wrap-width=${sz[2]} --ellipsize-cols=1 \
     --column=Name:IMG \
     --column=Name:TXT &
-    yad --text-info --text-align=right --tabnum=3 \
-    --text="<small>$infolabel</small>" \
-    --plug=$KEY --filename="${nt}" \
-    --wrap --editable \
-    --margins=14 --fontname='vendana 11' > "${fdit}" &
+    yad --form --tabnum=3 \
+    --plug=$KEY \
+    --text="\n<small>$infolabel</small>\n" \
+    --borders=10 --columns=2 \
+    --field=" $(gettext "Subscriptions") ":FBTN "$cmd_sub" \
+    --field=" ":LBL " " \
+    --field="$(gettext "Options")":FBTN "$cmd_optns" \
+    --field="$(gettext "Remove")":FBTN "$cmd_del"  &
     yad --notebook --title="Idiomind - $info" \
     --name=Idiomind --class=Idiomind --key=$KEY \
     --always-print-result \
@@ -255,24 +255,19 @@ function podmode() {
     --width=${sz[0]} --height=${sz[1]} --borders=5 --tab-borders=0 \
     --tab=" $(gettext "Episodes") " \
     --tab=" $(gettext "Favorites") " \
-    --tab=" $(gettext "Note") " \
+    --tab=" $(gettext "Manage") " \
     --button="$(gettext "Play")":"$DS/play.sh play_list" \
     --button="$(gettext "Update")":2 \
     --button="$(gettext "Close")"!'window-close':1
     ret=$?
-    note_mod="$(< "${fdit}")"
-    if [ "${note_mod}" != "$(< "${nt}")" ]; then
-        if ! grep '^$' < <(sed -n '1p' "${fdit}")
-        then echo -e "\n${note_mod}" > "${nt}"
-        else echo "${note_mod}" > "${nt}"; fi
-    fi
     if [ $ret -eq 2 ]; then "$DSP/podcasts.sh" update 1; fi
-    cleanups "${fdit}"
+
 } 
 
 function update() {
     include "$DS/ifs/mods/add"
-    sets=( 'channel' 'link' 'logo' 'ntype' 'nmedia' 'ntitle' 'nsumm' 'nimage' 'url' )
+    sets=( 'channel' 'link' 'logo' 'ntype' \
+    'nmedia' 'ntitle' 'nsumm' 'nimage' 'url' )
 
     conditions() {
         if ps -A |pgrep -f "podcasts.sh set_channel"; then
@@ -310,12 +305,7 @@ function update() {
         fi
         check_dir "$DM_tl/Podcasts/cache" "$DM_tl/Podcasts/.conf"
         check_file "$DCP/old.lst"
-        export cntfeeds=$(sed '/^$/d' < "$DCP/feeds.lst" |wc -l)
-        if [[ ${cntfeeds} -le 0 ]]; then
-            [[ ${1} = 1 ]] && msg "$(gettext "Missing URL. Please check the settings in the preferences dialog.")\n" dialog-information
-            cleanups "$updt" "$DT_r"
-            exit 1
-        fi
+
         if [[ ${1} = 1 ]]; then internet; else curl -v www.google.com 2>&1 \
         | grep -m1 "HTTP/1.1" >/dev/null 2>&1 || exit 1; fi
     }
@@ -379,59 +369,13 @@ function update() {
     }
 
     get_images() {
-        
-        rmsure() {
-            find "$DT_r" -maxdepth 1 -type f -regextype posix-extended \
-            -iregex '.*\.(jpg|jpeg|png|JPG|JPEG|PNG)$' -delete
-        }
-        
         if [ "$tp" = 'aud' ]; then
-            rmsure
-            p=1; t=1; unset img
-            eyeD3 --write-images "$DT_r" "$DT_r/media.$ex"
-            img="$(ls |grep -E '.jpeg|.JPEG|.jpg|.JPG|.png|.PNG' |head -n1)"
-            
-            if [ ! -f "$DT_r/$img" ]; then
-                wget -q -O- "$FEED" |grep -o '<itunes:image href="[^"]*' \
-                |grep -o '[^"]*$' |xargs wget -c
-                img="$(ls |grep -E '.jpeg|.JPEG|.jpg|.JPG|.png|.PNG' |head -n1)"
-            else
-                t=0
-            fi
-            if [ ! -f "$DT_r/$img" ]; then
-                cp -f "$DSP/images/audio.png" "$DMC/$fname.png"; p=0
-            fi
+            cp -f "$DSP/images/audio.png" "$DMC/$fname.png"
         elif [ "$tp" = 'vid' ]; then
-            rmsure
-            p=1; mplayer -ss 60 -nosound -noconsolecontrols \
-            -vo jpeg -frames 3 ./"media.$ex" >/dev/null
-            img="$(ls |grep -E '.jpeg|.JPEG|.jpg|.JPG|.png|.PNG' |head -n1)"
-            
-            if [ ! -f "$DT_r/$img" ]; then
-                cp -f "$DSP/images/audio.png" "$DMC/$fname.png"; p=0
-            fi
+            cp -f "$DSP/images/video.png" "$DMC/$fname.png"
         elif [ "$tp" = 'txt_img' -o "$tp" = 'txt' ]; then
-            t=0; p=1
-            if [ ! -f ./"image.$ex" ]; then
-                cp -f "$DSP/images/text.png" "$DMC/$fname.png"; p=0
-            fi
-            img="image.$ex"
+            cp -f "$DSP/images/text.png" "$DMC/$fname.png"
         fi
-        
-        if [ ${p} = 1 -a -f "$DT_r/$img" ]; then
-            layer="$DSP/images/layer.png"
-            [ ${t} = 1 ] && eyeD3 --encoding=$eyed3_encoding \
-            --add-image "$DT_r/$img":ILLUSTRATION "$DT_r/media.$ex"
-            convert "$DT_r/$img" -interlace Plane -thumbnail 62x54^ \
-            -gravity center -extent 62x54 -quality 100% tmp.png
-            convert tmp.png -bordercolor white \
-            -border 2 \( +clone -background black \
-            -shadow 70x3+2+2 \) +swap -background transparent \
-            -layers merge +repage tmp.png
-            composite -compose Dst_Over tmp.png "${layer}" "$DMC/$fname.png"
-        fi
-        
-        rmsure
     }
     
     fetch_podcasts() {
@@ -440,11 +384,10 @@ function update() {
         source "$DS/default/sets.cfg"
         lgt=${tlangs[$tlng]}
         lgs=${slangs[$slng]}
-        for ln in {1..12}; do
+        for ln in {1..18}; do
             if [ -f "$DCP/${ln}.rss" ]; then
             FEED=$(grep -o "url"=\"[^\"]* "$DCP/${ln}.rss" |grep -o '[^"]*$')
             else continue; fi
-            pporc=$((cntfeeds*downloads))
             if [ ! -z "$FEED" ]; then
                 echo -e "\n  -- updating $FEED\n"
                 if [ ! -e "$DCP/${ln}.rss" ]; then
@@ -747,9 +690,7 @@ function update() {
         fi
     fi
     exit
-} 
-#>/dev/null 2>&1
-
+} >/dev/null 2>&1
 
 
 function vwr() {
@@ -1106,6 +1047,8 @@ case "$1" in
     podmode "$@" ;;
     viewer)
     vwr ;;
+    dlg_optns)
+    dlg_optns ;;
     dlg_links)
     dlg_links ;;
     set_channel)

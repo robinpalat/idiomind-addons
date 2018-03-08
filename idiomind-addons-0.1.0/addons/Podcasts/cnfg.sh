@@ -6,6 +6,8 @@ cd "$(dirname "$0")"
 if [[ $1 = 'viewer' ]]; then
     export item="$3"
     ./podcasts.sh viewer & exit
+elif [[ $1 = 'optns' ]]; then
+    ./podcasts.sh dlg_optns & exit
 elif [[ $1 = 'remove_item' ]]; then
     ./podcasts.sh remove_item & exit
 elif [[ $1 = 'delete_all' ]]; then
@@ -17,5 +19,21 @@ elif [[ $1 = 'stop' ]]; then
     if ps -A | pgrep -f "podcasts.sh update"; then kill -9 $(pgrep -f "podcasts.sh update") & fi
     exit
 else
-    ./podcasts.sh & exit
+    f=0
+    check_dir "$DM_tl/Podcasts" "$DM_tl/Podcasts/.conf" "$DM_tl/Podcasts/cache"
+    if [ ! -f "$DM_tl/Podcasts/.conf/stts" ]; then f=1
+    else 
+        [ $(< "$DM_tl/Podcasts/.conf/stts") != 11 ] && f=1
+    fi
+    if [ ${f} = 1 ]; then
+        cd "$DM_tl/Podcasts/.conf/"
+        touch "./podcasts.cfg" "./1.lst" "./2.lst" "./feeds.lst" "./old.lst"
+        echo 11 > "$DM_tl/Podcasts/.conf/stts"
+        echo -e "\n$(gettext "Latest downloads:") 0"
+        > "$DM_tl/Podcasts/cache/.CACHEDIR"
+        > "$DM_tl/Podcasts/$date.updt"
+        "$DS/mngr.sh" mkmn 0
+    fi
+    
+    "$DS/ifs/tpc.sh" 'Podcasts' 11 & exit
 fi

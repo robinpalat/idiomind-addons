@@ -5,7 +5,7 @@ source /usr/share/idiomind/default/c.conf
 file_cfg="${DM_tl}/Podcasts/.conf/podcasts.cfg"
 evideo="$(grep -oP '(?<=evideo=\").*(?=\")' "${file_cfg}")"
 eaudio="$(grep -oP '(?<=eaudio=\").*(?=\")' "${file_cfg}")"
-e_keep="$(grep -oP '(?<=e_keep=\").*(?=\")' "${file_cfg}")"
+ekeep="$(grep -oP '(?<=ekeep=\").*(?=\")' "${file_cfg}")"
 altrau="$(grep -oP '(?<=altrau=\").*(?=\")' "${file_cfg}")"
 altrvi="$(grep -oP '(?<=altrvi=\").*(?=\")' "${file_cfg}")"
 [ -d "$DT"/ ] && find "$DT"/ -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
@@ -56,7 +56,7 @@ if [ -e "$DT/play2lck" ]; then
         notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
     fi
 
-elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${e_keep} = TRUE ]]; then
+elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; then
 
     video_file() {
             fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
@@ -72,7 +72,7 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${e_keep} = TRUE ]];
             fi
     }
     
-    if [ ${e_keep} = TRUE ]; then
+    if [ ${ekeep} = TRUE ]; then
         if [ -z "${altrau}" -a -z "${altrvi}" ]; then
             sleep 1
             while read -r item; do get_itep

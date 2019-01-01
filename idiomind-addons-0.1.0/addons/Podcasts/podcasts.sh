@@ -27,7 +27,7 @@ function dlg_optns() {
     else 
         > "$DCP/podcasts.cfg"
     fi
-    sets=( 'update' 'sync' 'synf' 'path' 'eaudio' 'evideo' 'e_keep' 'altrvi' )
+    sets=( 'update' 'sync' 'synf' 'path' 'eaudio' 'evideo' 'ekeep' 'altrvi' )
     if [ ! -d "${path}" -o ! -n "${path}" ]; then path=/FALSE; fi
     n=0
     if [ ${cfg} = 1 ]; then

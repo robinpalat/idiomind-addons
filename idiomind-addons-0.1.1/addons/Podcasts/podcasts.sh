@@ -2,7 +2,7 @@
 # -*- ENCODING: UTF-8 -*-
 
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
-sz=(580 560 440); [[ ${swind} = TRUE ]] && sz=(480 460 340)
+sz=(580 560 480); [[ ${swind} = TRUE ]] && sz=(480 460 400)
 f="$(gettext "Favorites<i><small><small> Podcasts</small></small></i>")"
 c="$(gettext "Videos<i><small><small> Podcasts</small></small></i>")"
 b="$(gettext "New episodes<i><small><small> Podcasts</small></small></i>")"
@@ -49,7 +49,7 @@ function dlg_optns() {
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=360 --borders=8 \
+    --width=350 --height=360 --borders=8 \
     --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
     --field=" ":LBL " " \
     --field="$(gettext "Use this video player")":LBL " " \
@@ -178,7 +178,7 @@ function dlg_subs() {
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=520 --height=360 --borders=8 \
+    --width=450 --height=320 --borders=8 \
     --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
@@ -214,9 +214,9 @@ function podmode() {
 
     c=$(echo $(($RANDOM%100000))); KEY=$c
     if [ -d "$DT"/*.dl_poddir ]; then
-        info="$(gettext "Podcasts / Downloading...")"
+        info="$(gettext "Podcasts | Downloading...")"
     elif [ -e ${updt} ]; then
-        info="$(gettext "Podcasts / Updating...")"
+        info="$(gettext "Podcasts | Updating...")"
     else
         info="$(gettext "Podcasts")"
     fi
@@ -240,17 +240,18 @@ function podmode() {
     --column=Name:TXT &
     yad --form --tabnum=3 \
     --plug=$KEY \
-    --text="\n<small>$infolabel</small>\n" \
     --borders=10 --columns=2 \
-    --field=" $(gettext "Subscriptions") ":FBTN "$cmd_sub" \
+    --field="<small><b>$infolabel</b></small>":LBL " " \
     --field=" ":LBL " " \
+    --field=" ":LBL " " \
+    --field=" $(gettext "Subscriptions") ":FBTN "$cmd_sub" \
     --field="$(gettext "Options")":FBTN "$cmd_optns" \
     --field="$(gettext "Remove")":FBTN "$cmd_del"  &
     yad --notebook --title="Idiomind - $info" \
     --name=Idiomind --class=Idiomind --key=$KEY \
     --always-print-result \
     --window-icon=idiomind --image-on-top \
-    --ellipsize=END --align=right --center --fixed \
+    --ellipsize=END --align=right --center \
     --width=${sz[0]} --height=${sz[1]} --borders=5 --tab-borders=0 \
     --tab=" $(gettext "Episodes") " \
     --tab=" $(gettext "Favorites") " \

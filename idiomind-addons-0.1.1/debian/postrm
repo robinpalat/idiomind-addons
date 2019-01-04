@@ -20,6 +20,6 @@ set -e
 
 #DEBHELPER#
 
-/usr/share/idiomind/ifs/tls.sh update_menu
+/usr/share/idiomind/ifs/tls.sh update_addons
 
 exit 0

@@ -718,9 +718,10 @@ function vwr() {
     --name=Idiomind --class=Idiomind \
     --encoding=UTF-8 --uri="${uri}" \
     --window-icon=idiomind --center --on-top \
-    --width=${sz[0]} --height=${sz[1]}  --borders=0 "$btnre" \
+    --width=${sz[0]} --height=${sz[1]}  --borders=5 "$btnre" \
     --button="!document-save-as!$(gettext "Save as")":"${btncmd2}" \
-    --button="${btnlabel}":"${btncmd}"
+    --button="${btnlabel}":"${btncmd}" \
+    --button="$(gettext "Close")":1
 }
 
 

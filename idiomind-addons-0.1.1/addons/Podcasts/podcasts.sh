@@ -40,7 +40,7 @@ function dlg_optns() {
     else
         > "$DCP/podcasts.cfg"
         while [ ${n} -le 7 ]; do
-            echo -e "${sets[${n}]}=\"\"" >> "$DCP/podcasts.cfg"
+            echo -e "${sets[${n}]}=\"FALSE\"" >> "$DCP/podcasts.cfg"
             ((n=n+1))
         done
     fi
@@ -85,12 +85,17 @@ function dlg_links() {
         (sleep 50; cleanups "$DT/Sclk") & exit 1
     fi
     function _list() {
+        if [ -f "$DCP/download/${tlng}.lst" ]; then
+            lstFile="$DCP/download/${tlng}.lst"
+        else
+            lstFile="$DSP/${tlng}.lst"
+        fi
         n=7; while read -r line; do
             [ ! -s "$DCP/${n}.rss" ] && cleanups "$DCP/${n}.rss"
             [ -f "$DCP/${n}.rss" ] && val=TRUE || val=FALSE
             echo -e "${line}" |sed "s/SEL/${val}/g" |tr -s '|' '\n'
             n=$((n+1))
-        done < "$DSP/${tlng}.lst"
+        done < "$lstFile"
     }
     dlg="$(_list |yad --list \
     --title="$(gettext "Suggested Contents")" \
@@ -106,6 +111,7 @@ function dlg_links() {
     --column="":TEXT \
     --column="":TEXT \
     --column="":TEXT \
+    --button="$(gettext "Update List")":2 \
     --button="$(gettext "Save")!gtk-save":0 \
     --button="$(gettext "Cancel")":1)"
     ret=$?
@@ -122,6 +128,15 @@ function dlg_links() {
             fi
         n=$((n+1)); [ ${n} -gt 18 ] && break
         done
+    elif [ ${ret} = 2 ]; then
+        cleanups "$DCP/download"; cd "$DT"
+        wget -T 10 "https://sourceforge.net/p/idiomind/${tlng}_pod"
+        if [ -f "$DT/downloads_list" ]; then
+            mkdir "$DCP/download"; cd "$DCP/download"
+            wget -i "$DT/downloads_list"
+            cleanups "$DT/downloads_list"; cd /
+        fi
+        "$DSP/podcasts.sh" dlg_links &
     fi
     cleanups "$DT/Sclk"
 }
@@ -178,7 +193,7 @@ function dlg_subs() {
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
     --scroll --on-top --mouse \
-    --width=450 --height=320 --borders=8 \
+    --width=450 --height=340 --borders=8 \
     --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \

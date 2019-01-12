@@ -14,13 +14,13 @@ c=$(yad --form --title="$(gettext "Speech to text")" \
 --text="This script makes use of Google's speech recognition engine in order to try recognize speech from MP3 audio files. You can invoke this function by entering a single character into the text box from dialog New note." \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar --expand-column=3 \
---width=450 --height=250 --borders=5 \
+--width=450 --height=250 --borders=15 \
 --always-print-result --editable --print-all \
 --field="\t$(gettext "Use this character to invoke:")" "$ini" \
 --field="Key" "$key" \
 --field="For this feature you need to provide a key. Please get one from: <a href='$link'>wwww.console.developers.google.com</a>":lbl " " \
---button="$(gettext "Cancel")":1 \
---button="$(gettext "OK")":0)
+--button="$(gettext "Save")!gtk-apply":0 \
+--button="$(gettext "Close")":1)
 ret=$?
 if [[ $ret = 0 ]]; then
 val1="$(cut -d "|" -f1 <<<"$c")"

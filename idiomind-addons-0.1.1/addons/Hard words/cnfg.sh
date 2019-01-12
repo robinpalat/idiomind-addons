@@ -21,12 +21,12 @@ c=$(yad --form --title="$(gettext "Hard words to learn")" \
 --text="$label" \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar \
---width=400 --height=120 --borders=10 \
+--width=400 --height=150 --borders=10 \
 --always-print-result --editable --print-all \
 --field="$(gettext "Active")":chk "$act" \
 --field="$(gettext "Topic name")" "$name" \
---button="$(gettext "Cancel")":1 \
---button="$(gettext "OK")":0)
+--button="$(gettext "Save")!gtk-apply":0 \
+--button="$(gettext "Close")":1)
 ret=$?
 
 if [ $ret = 0 ]; then

@@ -1,7 +1,7 @@
 Source: idiomind-addons
 Section: x11
 Priority: optional
-Maintainer: Robin Palatnik <robinpalat@gmail.com>
+Maintainer: Robin Palatnik <robinpalat@users.sourceforge.net>
 Build-Depends: debhelper (>= 9)
 Standards-Version: 3.9.7
 Homepage: https://idiomind.sourceforge.net

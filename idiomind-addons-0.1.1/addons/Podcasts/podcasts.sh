@@ -60,8 +60,8 @@ function dlg_optns() {
     --field="$(gettext "Path where episodes should be synced")":LBL " " \
     --field="":DIR "$path" \
     --field="$(gettext "Synchronize")":FBTN "$DSP/podcasts.sh 'sync' 2" \
-    --button="$(gettext "Save")"!gtk-save:0 \
-    --button="$(gettext "Cancel")":1)"
+    --button="$(gettext "Save")"!gtk-apply:0 \
+    --button="$(gettext "Close")":1)"
     ret=$?
     if [ $ret -eq 0 ]; then
         val1=$(cut -d "|" -f1 <<< "$CNFG")
@@ -112,8 +112,8 @@ function dlg_links() {
     --column="":TEXT \
     --column="":TEXT \
     --button="$(gettext "Update List")":2 \
-    --button="$(gettext "Save")!gtk-save":0 \
-    --button="$(gettext "Cancel")":1)"
+    --button="$(gettext "Save")!gtk-apply":0 \
+    --button="$(gettext "Close")":1)"
     ret=$?
     if [ ${ret} = 0 ]; then
         touch "$DT/Sclk"
@@ -198,8 +198,8 @@ function dlg_subs() {
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
     --field="$(gettext "Suggested Contents")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
-    --button="$(gettext "Save")"!gtk-save:0 \
-    --button="$(gettext "Cancel")":1)"
+    --button="$(gettext "Save")"!gtk-apply:0 \
+    --button="$(gettext "Close")":1)"
     ret=$?
     if [ $ret -eq 0 ]; then apply; fi
     cleanups "$DT/cp.lock"
@@ -229,17 +229,17 @@ function podmode() {
 
     c=$(echo $(($RANDOM%100000))); KEY=$c
     if [ -d "$DT"/*.dl_poddir ]; then
-        info="$(gettext "Podcasts | Downloading...")"
+        info="$(gettext "Downloading...")\n"
     elif [ -e ${updt} ]; then
-        info="$(gettext "Podcasts | Updating...")"
+        info="$(gettext "Updating...")\n"
     else
-        info="$(gettext "Podcasts")"
+        info=""
     fi
     cmd_sub="$DSP/cnfg.sh 'subs'"
     cmd_optns="$DSP/cnfg.sh 'optns'"
     cmd_del="$DSP/cnfg.sh 'delete_all'"
     infolabel="$(< "$DMP"/*.updt)"
-    _list_1 | yad --list --tabnum=1 \
+    _list_1 |yad --list --tabnum=1 \
     --plug=$KEY --print-all \
     --dclick-action="$DSP/cnfg.sh viewer" \
     --no-headers --expand-column=2 \
@@ -256,13 +256,13 @@ function podmode() {
     yad --form --tabnum=3 \
     --plug=$KEY \
     --borders=10 --columns=2 \
-    --field="<small><b>$infolabel</b></small>":LBL " " \
+    --field="<small><b>$info$infolabel</b></small>":LBL " " \
     --field=" ":LBL " " \
     --field=" ":LBL " " \
     --field=" $(gettext "Subscriptions") ":FBTN "$cmd_sub" \
     --field="$(gettext "Options")":FBTN "$cmd_optns" \
     --field="$(gettext "Remove")":FBTN "$cmd_del"  &
-    yad --notebook --title="Idiomind - $info" \
+    yad --notebook --title="Idiomind - $(gettext "Podcasts")" \
     --name=Idiomind --class=Idiomind --key=$KEY \
     --always-print-result \
     --window-icon=idiomind --image-on-top \
@@ -493,8 +493,7 @@ function update() {
                                     |sed -e 's/^[ \t]*//' \
                                     |tr -d '\n' > "$DMC/$fname.item"
                                     let d++
-                                    echo -e "<b>$(gettext "Downloading")</b>
-                                    \r$(gettext "Latest downloads:") $d" \
+                                    echo -e "$(gettext "Latest downloads:") $d" \
                                     |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
                                 fi
                             fi
@@ -588,8 +587,7 @@ function update() {
                                 |sed -e 's/^[ \t]*//' \
                                 |tr -d '\n' > "$DMC/$fname.item"
                                 let d++
-                                echo -e "<b>$(gettext "Downloading")</b>
-                                \r$(gettext "Latest downloads:") $d" \
+                                echo -e "$(gettext "Latest downloads:") $d" \
                                 |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
                                
                             fi
@@ -654,8 +652,7 @@ function update() {
     if [[ ${2} = 1 ]]; then echo "Podcasts" > "$DC_s/tpa"; fi
     rm "$DM_tl/Podcasts"/*.updt
     > "$updt"
-    echo -e "$(gettext "Updating")
-    \r$(gettext "Latest downloads:") 0" \
+    echo -e "$(gettext "Latest downloads:") 0" \
     |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
     fetch_podcasts
 
@@ -669,7 +666,7 @@ function update() {
     find "$DT_r" -maxdepth 1 -type d -name '*.dl_poddir' -exec rm -fr {} \;
     find "$DM_tl/Podcasts" -maxdepth 1 -type f -name '*.updt' -delete
 
-    echo -e "$(gettext "Last update:") $(date "+%r %a %d %B")
+    echo -e "$(gettext "Updated:") $(date "+%r %a %d %B")
     \r$(gettext "Latest downloads:") $new_episodes" \
     |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
 

@@ -46,7 +46,7 @@ function dlg_file_2() {
 if [[ ${conten^} = ${char_ini^} ]]; then
 
     if [ -z "$apikeygo" ]; then
-        msg "Key not found! Please check the setting in the preferences dialog." dialog-information
+        msg "Key not found!" dialog-information
         cleanups "$lckpr" "$DT_r" & exit 1
     fi
     cd "$HOME"; fl="$(dlg_file_1)"

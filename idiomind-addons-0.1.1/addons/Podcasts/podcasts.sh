@@ -19,6 +19,16 @@ downloads=2
 rsync_delete=0
 eyed3_encoding=utf8
 
+function dlg_progress() {
+    yad --progress --title="Idiomind" \
+    --text="<b>$1</b>" \
+    --name=Idiomind --class=Idiomind \
+    --window-icon=idiomind --align=right \
+    --progress-text=" " --pulsate  \
+    --percentage="0" --auto-close \
+    --no-buttons --on-top --fixed \
+    --width=420 --borders=10
+}
 
 function dlg_optns() {
     cfg=0
@@ -48,7 +58,7 @@ function dlg_optns() {
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
-    --scroll --on-top --mouse \
+    --scroll --mouse \
     --width=350 --height=360 --borders=8 \
     --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
     --field=" ":LBL " " \
@@ -79,32 +89,68 @@ function dlg_optns() {
 }
 
 function dlg_links() {
+
+    checkpods() {
+        touch "$DT/Sclk"
+        ( cleanups "$DCP/downloaded" "$DT/Podcasts.lst"; cd "$DT"
+        wget -T 10 "https://idiomind.sourceforge.io/share/${tlng}/Podcasts.lst"
+        
+        if [ -f "$DT/Podcasts.lst" ]; then
+            if cat "$DT/Podcasts.lst" |grep -o 'SEL|'; then
+                mkdir "$DCP/downloaded"
+                mv -f  "$DT/Podcasts.lst" "$DCP/downloaded/Podcasts.lst"
+                n="$(cat "$DCP/downloaded/Podcasts.lst" | wc -l)"
+                cd "$DCP/downloaded"
+                 echo "1"; echo "#  "
+                i=1; while [ ${i} -le ${n} ]; do
+                    wget -T 20 "https://idiomind.sourceforge.io/share/${tlng}/Podthumbs/$i.jpg"
+                    if [ ! -f "$DCP/downloaded/$i.jpg" ]; then
+                        cp "$DS/addons/Podcasts/images/def.jpg" "$DCP/downloaded/$i.jpg"
+                    fi
+                    echo $i
+                    let i++
+                done
+            fi
+            cd /
+        fi
+        echo '100'
+         ) | dlg_progress "<b>$(gettext "Downloading podcast list ...")</b>"
+        
+        cleanups "$DT/Sclk" "$DT/Podcasts.lst"
+    }
     
     if [ -f "$DT/Sclk" ]; then
         msg "$(gettext "Please wait until the current actions are finished")...\n" dialog-information
         (sleep 50; cleanups "$DT/Sclk") & exit 1
     fi
+    
+    if [ -f "$DCP/downloaded/Podcasts.lst" ]; then
+        lstFile="$DCP/downloaded/Podcasts.lst"
+    else
+        checkpods
+        lstFile="$DCP/downloaded/Podcasts.lst"
+    fi
+        
     function _list() {
-        if [ -f "$DCP/download/${tlng}.lst" ]; then
-            lstFile="$DCP/download/${tlng}.lst"
-        else
-            lstFile="$DSP/${tlng}.lst"
-        fi
-        n=7; while read -r line; do
-            [ ! -s "$DCP/${n}.rss" ] && cleanups "$DCP/${n}.rss"
-            [ -f "$DCP/${n}.rss" ] && val=TRUE || val=FALSE
-            echo -e "${line}" |sed "s/SEL/${val}/g" |tr -s '|' '\n'
-            n=$((n+1))
-        done < "$lstFile"
+
+        d="$DCP/downloaded"
+        n=7; i=1; while read -r line; do
+            if echo "${line}" |grep -o 'SEL|' >/dev/null 2>&1; then
+                [ ! -s "$DCP/${n}.rss" ] && cleanups "$DCP/${n}.rss"
+                [ -f "$DCP/${n}.rss" ] && val=TRUE || val=FALSE
+                echo -e "$d/$i.jpg|${line}" |sed "s/SEL/${val}/g" |tr -s '|' '\n'
+                let n++ i++
+            fi
+        done < "${lstFile}"
     }
     dlg="$(_list |yad --list \
-    --title="$(gettext "Suggested Contents")" \
+    --title="$(gettext "Suggested podcasts to learn") $tlng" \
     --name=Idiomind --class=Idiomind  \
     --print-all --print-column=3 \
     --always-print-result --separator="|" \
     --window-icon=idiomind \
     --expand-column=0 --hide-column=3 \
-    --center --on-top --no-headers \
+    --center --no-headers \
     --width=520 --height=390 --borders=8 \
     --column="":IMG \
     --column="":CHK \
@@ -129,14 +175,10 @@ function dlg_links() {
         n=$((n+1)); [ ${n} -gt 18 ] && break
         done
     elif [ ${ret} = 2 ]; then
-        cleanups "$DCP/download"; cd "$DT"
-        wget -T 10 "https://sourceforge.net/p/idiomind/${tlng}_pod"
-        if [ -f "$DT/downloads_list" ]; then
-            mkdir "$DCP/download"; cd "$DCP/download"
-            wget -i "$DT/downloads_list"
-            cleanups "$DT/downloads_list"; cd /
-        fi
-        "$DSP/podcasts.sh" dlg_links &
+
+        checkpods
+        "$DSP/podcasts.sh" dlg_links & return
+
     fi
     cleanups "$DT/Sclk"
 }
@@ -188,16 +230,12 @@ function dlg_subs() {
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
     --window-icon=idiomind \
-    --scroll --on-top --mouse \
-    --name=Idiomind --class=Idiomind \
-    --always-print-result --print-all --separator="|" \
-    --window-icon=idiomind \
-    --scroll --on-top --mouse \
+    --scroll --mouse \
     --width=450 --height=340 --borders=8 \
     --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
-    --field="$(gettext "Suggested Contents")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
+    --field="$(gettext "Suggested Podcasts")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
     --button="$(gettext "Save")"!gtk-apply:0 \
     --button="$(gettext "Close")":1)"
     ret=$?

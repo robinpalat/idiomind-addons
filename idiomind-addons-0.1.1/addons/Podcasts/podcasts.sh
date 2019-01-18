@@ -120,7 +120,7 @@ function dlg_links() {
     }
     
     if [ -f "$DT/Sclk" ]; then
-        msg "$(gettext "Please wait until the current actions are finished")...\n" dialog-information
+        msg "$(gettext "Please wait until the current process is finished")...\n" dialog-information
         (sleep 50; cleanups "$DT/Sclk") & exit 1
     fi
     
@@ -770,8 +770,7 @@ function vwr() {
     --window-icon=idiomind --center --on-top \
     --width=${sz[0]} --height=${sz[1]}  --borders=5 "$btnre" \
     --button="!document-save-as!$(gettext "Save as")":"${btncmd2}" \
-    --button="${btnlabel}":"${btncmd}" \
-    --button="$(gettext "Close")":1
+    --button="${btnlabel}":"${btncmd}" 
 }
 
 

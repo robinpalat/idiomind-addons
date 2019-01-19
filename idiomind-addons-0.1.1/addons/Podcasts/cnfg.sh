@@ -19,9 +19,13 @@ elif [[ $1 = 'delete_all' ]]; then
 elif [[ $1 = 'tasks' ]]; then
     ./podcasts.sh "$@" & exit
 elif [[ $1 = 'stop' ]]; then
-    if ps -A | pgrep -f "wget -q -c -T 51"; then kill -9 $(pgrep -f "wget -q -c -T 51") & fi
-    if ps -A | pgrep -f "podcasts.sh update"; then kill -9 $(pgrep -f "podcasts.sh update") & fi
-    exit
+    if ps -A | pgrep -f "wget -q -c -T 51"; then 
+        kill -9 $(pgrep -f "wget -q -c -T 51") &
+    fi
+    if ps -A | pgrep -f "podcasts.sh update"; then 
+        kill -9 $(pgrep -f "podcasts.sh update") &
+    fi
+    exit 0
 else
     source "$DS/ifs/cmns.sh"
     f=0
@@ -37,8 +41,14 @@ else
         echo -e "\n$(gettext "Latest downloads:") 0" > "$DM_tl/Podcasts/$date.updt"
         > "$DM_tl/Podcasts/cache/.CACHEDIR"
         > "$DM_tl/Podcasts/$date.updt"
+        > "$DM_tl/Podcasts/.conf/podcasts.cfg"
+        sets=( 'update' 'sync' 'synf' 'path' 'eaudio' 'evideo' 'ekeep' 'altrvi' )
+        n=0
+        while [ ${n} -le 7 ]; do
+            echo -e "${sets[${n}]}=\"FALSE\"" >> "$DM_tl/Podcasts/.conf/podcasts.cfg"
+            ((n=n+1))
+        done
         "$DS/mngr.sh" mkmn 0
     fi
-    
-    "$DS/ifs/tpc.sh" 'Podcasts' 11 & exit
+    "$DS/ifs/tpc.sh" 'Podcasts' 11 & exit 0
 fi

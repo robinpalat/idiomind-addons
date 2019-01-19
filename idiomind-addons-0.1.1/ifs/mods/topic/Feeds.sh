@@ -23,11 +23,10 @@ fetch_content() {
         [ ${t} = 30 ] && exit 1
     done
     
-    source "$DS/ifs/mods/add/add.sh"
-
     cat "${DC_tlt}/feeds" |while read -r _feed; do
     
         if [ -n "${_feed}" ]; then
+        
             wget -O "$DT/out.xml" "${_feed}"
             feed_items="$(xsltproc "$DS/default/tmpl.xml" "$DT/out.xml")"
             if [ -z "${feed_items}" ]; then internet; fi
@@ -35,6 +34,7 @@ fetch_content() {
             feed_items="$(echo "${feed_items}" |sed '/^$/d')"
 
             while read -r item; do
+                
                 if [[ $(wc -l < "${DC_tlt}/data") -ge 200 ]]; then exit 1; fi
                 fields="$(echo "${item}" |sed -r 's|-\!-|\n|g')"
                 title=$(echo "${fields}" |sed -n 3p \
@@ -45,12 +45,14 @@ fetch_content() {
                 |sed 's|/|\\/|g' |sed 's/\&/\&amp\;/g')"
 
                 if [ -n "${title}" ]; then
+                
                     if ! grep -Fo "trgt{${title^}}" "${DC_tlt}/data" >/dev/null 2>&1 && \
                     ! grep -Fxq "${title^}" "${DC_tlt}/exclude" >/dev/null 2>&1; then
                         export trans='TRUE'
                         export trgt="${title^}"
+                        export tpe
                         echo "${trgt}" >> "$DT/updating_feeds"
-                        new_item
+                        "$DS/add.sh" new_item "${tpe}"
                     fi
                 fi
             done <<< "${feed_items}"
@@ -67,7 +69,7 @@ fetch_content() {
     
     cleanups "$DT/updating_feeds" 
     return 0
-} 
+} >/dev/null 2>&1
 
 function edit_feeds_list() {
     kill -9 $(pgrep -f "yad --list --title") &
@@ -106,7 +108,7 @@ edit_feeds() {
             echo "${mods}" |sed -e '/^$/d' > "${file}"
         fi
         if [ $ret = 2 ]; then
-            fetch_content "${tpc}" 1 &
+            "$DS/ifs/mods/topic/Feeds.sh" fetch_content "${tpc}" 1 &
         fi
     fi
 } >/dev/null 2>&1

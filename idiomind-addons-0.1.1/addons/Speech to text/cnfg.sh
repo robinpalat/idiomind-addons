@@ -5,13 +5,17 @@
 source "$DS/ifs/cmns.sh"
 link='https://console.developers.google.com'
 DC_a="$HOME/.config/idiomind/addons"
+
+name="$(gettext "Speech to text")"
+label="$(gettext "This script makes use of Google's speech recognition engine in order to try recognize speech from MP3 audio files. You can invoke this function by entering a single character into the text box from dialog New note.")"
+
 if [ ! -f "$DC_a/gtts.cfg" ] || [[ -z "$(< "$DC_a/gtts.cfg")" ]]; then
 echo -e "ini=\"a\"\nkey=\"\"" > "$DC_a/gtts.cfg"; fi
 ini=$(grep -o ini=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
 key=$(grep -o key=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
 c=$(yad --form --title="$(gettext "Speech to text")" \
 --name=Idiomind --class=Idiomind \
---text="This script makes use of Google's speech recognition engine in order to try recognize speech from MP3 audio files. You can invoke this function by entering a single character into the text box from dialog New note." \
+--text="<b>$name</b>\n$label" \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar --expand-column=3 \
 --width=450 --height=250 --borders=15 \

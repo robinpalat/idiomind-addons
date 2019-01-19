@@ -6,7 +6,7 @@ source "$DS/ifs/cmns.sh"
 DC_a="$HOME/.config/idiomind/addons"
 fileconf="$DC_a/whtr.cfg"
 named="$(gettext "Hard words to learn")"
-label="$(gettext "Collect all words from the second review onwards that are difficult to learn.")\n"
+label="$(gettext "Collects all difficult words from the second review onwards.")\n"
 
 [ ! -f "$fileconf" ] && touch "$fileconf"
 if [[ -z "$(< "$fileconf")" ]]; then
@@ -18,7 +18,7 @@ name=$(grep -o name=\"[^\"]* "$fileconf" |grep -o '[^"]*$')
 [ -z "${name}" ] && name="${named}"
 c=$(yad --form --title="$(gettext "Hard words to learn")" \
 --name=Idiomind --class=Idiomind \
---text="$label" \
+--text="<b>${named}</b>\n$label" \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar \
 --width=400 --height=150 --borders=10 \

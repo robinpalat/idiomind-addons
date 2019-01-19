@@ -1,5 +1,6 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
+
 if curl -v www.google.com 2>&1 | grep -m1 "HTTP/1.1" >/dev/null 2>&1; then
     DCP="$DM_tl/Podcasts/.conf"
     if [ -f "$DCP/podcasts.cfg" ]; then

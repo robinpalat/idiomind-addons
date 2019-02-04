@@ -114,7 +114,7 @@ function dlg_links() {
             cd /
         fi
         echo '100'
-         ) | dlg_progress "<b>$(gettext "Downloading podcast list ...")</b>"
+         ) | dlg_progress "<b>$(gettext "Downloading list ...")</b>"
         
         cleanups "$DT/Sclk" "$DT/Podcasts.lst"
     }

@@ -13,7 +13,7 @@ c=$(yad --form --title="$name" \
 --text="<b>$name</b>\n$label" \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar \
---width=400 --borders=10 \
+--width=400 --borders=5 \
 --always-print-result --editable --print-all \
 --button="$(gettext "Close")":1)
 ret=$?

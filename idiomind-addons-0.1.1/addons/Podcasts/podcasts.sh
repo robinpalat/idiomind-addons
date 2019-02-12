@@ -245,10 +245,11 @@ function dlg_subs() {
 }
 
 function podmode() {
+    
     nmfile() { echo -n "${1}" |md5sum |rev |cut -c 4- |rev; }
     function _list_1() {
         while read -r list1; do
-            if [ -e "$DMP/cache/$(nmfile "$list1").png" ]; then
+            if [ -f "$DMP/cache/$(nmfile "$list1").png" ]; then
                 echo "$DMP/cache/$(nmfile "$list1").png"
             else 
                 echo "$DS_a/Podcasts/images/audio.png"; fi
@@ -257,7 +258,7 @@ function podmode() {
     }
     function _list_2() {
         while read -r list2; do
-            if [ -e "$DMP/cache/$(nmfile "$list2").png" ]; then
+            if [ -f "$DMP/cache/$(nmfile "$list2").png" ]; then
                 echo "$DMP/cache/$(nmfile "$list2").png"
             else
             echo "$DS_a/Podcasts/images/audio.png"; fi

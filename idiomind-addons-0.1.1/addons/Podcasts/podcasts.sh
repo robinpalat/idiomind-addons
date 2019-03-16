@@ -172,7 +172,7 @@ function dlg_links() {
             else
                 cleanups"$DCP/${n}.rss"
             fi
-        n=$((n+1)); [ ${n} -gt 18 ] && break
+        n=$((n+1)); [ ${n} -gt 20 ] && break
         done
     elif [ ${ret} = 2 ]; then
 
@@ -438,7 +438,7 @@ function update() {
         source "$DS/default/sets.cfg"
         lgt=${tlangs[$tlng]}
         lgs=${slangs[$slng]}
-        for ln in {1..18}; do
+        for ln in {1..20}; do
             if [ -f "$DCP/${ln}.rss" ]; then
             FEED=$(grep -o "url"=\"[^\"]* "$DCP/${ln}.rss" |grep -o '[^"]*$')
             else continue; fi

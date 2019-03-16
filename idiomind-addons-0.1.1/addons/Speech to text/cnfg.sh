@@ -26,10 +26,12 @@ c=$(yad --form --title="$(gettext "Speech to text")" \
 --button="$(gettext "Save")!gtk-apply":0 \
 --button="$(gettext "Close")":1)
 ret=$?
+
 if [[ $ret = 0 ]]; then
 val1="$(cut -d "|" -f1 <<<"$c")"
 val2="$(cut -d "|" -f2 <<<"$c")"
 sed -i "s/ini=.*/ini=\"$val1\"/g" "$DC_a/gtts.cfg"
 sed -i "s/key=.*/key=\"$val2\"/g" "$DC_a/gtts.cfg"
 fi
+
 exit 0

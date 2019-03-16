@@ -6,7 +6,7 @@ source "$DS/ifs/cmns.sh"
 DC_a="$HOME/.config/idiomind/addons"
 fileconf="$DC_a/whtr.cfg"
 named="$(gettext "Hard words to learn")"
-label="$(gettext "Collects all difficult words from the second review onwards.")\n"
+label="$(gettext "Collects difficult words from the second review onwards.")\n"
 
 [ ! -f "$fileconf" ] && touch "$fileconf"
 if [[ -z "$(< "$fileconf")" ]]; then

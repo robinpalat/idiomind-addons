@@ -80,11 +80,11 @@ if [[ ${conten^} = ${char_ini^} ]]; then
 
         elif grep ".tar" <<< "${fl: -4}"; then
             cp -f "$fl" "$DT_r/rv.tar"
-            tar -xvf "$DT_r/rv.tar" --strip-components=1
+            tar -xvf "$DT_r/rv.tar"
 
         elif grep ".tar.gz" <<< "${fl: -7}"; then
             cp -f "$fl" "$DT_r/rv.tar.gz"
-            tar -xzvf "$DT_r/rv.tar.gz" --strip-components=1
+            tar -xzvf "$DT_r/rv.tar.gz"
         fi
 
         echo "# $(gettext "Checking key")..."
@@ -103,7 +103,7 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         internet
         if [ "$lgt" = ja -o "$lgt" = 'zh-cn' -o "$lgt" = ru ]; then c=c; else c=w; fi
         lns=$(ls "$DT_r"/[0-9]*.mp3 |wc -l |head -200)
-        
+     
         ( echo "1"
         echo "# $(gettext "Processing... Wait.")";
         erw=1
@@ -113,7 +113,8 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             
             if [ -f "$DT_r/${erw}.mp3" ]; then
 
-                if [ ! -e "$DT_r/index" ]; then
+                if [ ! -f "$DT_r/index" ]; then
+
                     sox "$DT_r/${erw}.mp3" "$DT_r/info.flac" rate 16k
                    
                     data="$(audio_recog "$DT_r/info.flac" $lgt $lgt $apikeygo)"
@@ -214,17 +215,20 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         if [ ${wadds} = 1 ]; then
             W=" $(gettext "word")"
         fi
+        
         sadds=$(sed '/^$/d' "$DT_r/adds" |wc -l)
         S=" $(gettext "sentences")"
         if [ ${sadds} = 1 ]; then
             S=" $(gettext "sentence")"
         fi
+        
         _log=$(cat "$DT_r/slog" "$DT_r/wlog")
         adds=$(cat "$DT_r/adds" "$DT_r/addw" |sed '/^$/d' |wc -l)
         if [ ${adds} -ge 1 ]; then
             notify-send -i idiomind "$tpe" \
             "$(gettext "Have been added:")\n$sadds$S$wadds$W" -t 2000 &
         fi
+        
         [ -n "$_log" ] && echo "$_log" >> "${DC_tlt}/note.err"
         cleanups "$DT_r" "$DT/n_s_pr"
     fi

@@ -18,5 +18,4 @@ c=$(yad --form --title="$name" \
 --button="$(gettext "Close")":1)
 ret=$?
 
-
 exit 0

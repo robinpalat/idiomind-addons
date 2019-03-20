@@ -25,6 +25,7 @@ c=$(yad --form --title="$(gettext "Hard words to learn")" \
 --always-print-result --editable --print-all \
 --field="$(gettext "Active")":chk "$act" \
 --field="$(gettext "Topic name")" "$name" \
+--field=" ":lbl "" \
 --button="$(gettext "Save")!gtk-apply":0 \
 --button="$(gettext "Close")":1)
 ret=$?

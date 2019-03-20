@@ -10,7 +10,7 @@ if curl -v www.google.com 2>&1 | grep -m1 "HTTP/1.1" >/dev/null 2>&1; then
     done < <(cd "$DM_tl"; find ./ -maxdepth 1 -mtime -80 \
     -type d -not -path '*/\.*' -exec ls -tNd {} + |sed 's|\./||g;/^$/d')
     
-    echo -e "--- feeds updated\n" ) &
+    echo -e "\tfeeds ok\n" ) &
 fi
 
 

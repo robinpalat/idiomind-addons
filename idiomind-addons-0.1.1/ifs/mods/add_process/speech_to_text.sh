@@ -114,7 +114,7 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             if [ -f "$DT_r/${erw}.mp3" ]; then
 
                 if [ ! -f "$DT_r/index" ]; then
-
+                  
                     sox "$DT_r/${erw}.mp3" "$DT_r/info.flac" rate 16k
                    
                     data="$(audio_recog "$DT_r/info.flac" $lgt $lgt $apikeygo)"

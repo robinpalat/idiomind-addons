@@ -155,7 +155,7 @@ function dlg_links() {
         done < "${lstFile}"
     }
     dlg="$(_list |yad --list \
-    --title="$(gettext "Suggested podcasts to learn") $tlng" \
+    --title="$(gettext "Suggested podcasts to learn") - $tlng" \
     --name=Idiomind --class=Idiomind  \
     --print-all --print-column=3 \
     --always-print-result --separator="|" \

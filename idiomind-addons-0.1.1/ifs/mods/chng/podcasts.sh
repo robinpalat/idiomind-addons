@@ -8,17 +8,21 @@ eaudio="$(grep -oP '(?<=eaudio=\").*(?=\")' "${file_cfg}")"
 ekeep="$(grep -oP '(?<=ekeep=\").*(?=\")' "${file_cfg}")"
 altrau="" # alternative audio player
 altrvi="$(grep -oP '(?<=altrvi=\").*(?=\")' "${file_cfg}")"
-( 
-    if [ -n "$altrvi" ]; then
-        if ! which "$altrvi" >/dev/null; then
+
+check_alt_player () {
+    if [ -n "$1" ]; then
+        if ! which "$1" >/dev/null; then
             sleep 2
+            source "$DS/ifs/cmns.sh"
             msg "$(gettext "The specified path for the video player does not exist")" info
             "$DS/stop.sh" 2 &
         fi
     fi
-) &
+}
 
-[ -d "$DT"/ ] && find "$DT"/ -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+if [ -d $DT ]; then find $DT -maxdepth 1 \
+-type f -name '*.m3u' -exec rm -fr {} \;; fi
+
 DMC="$DM_tl/Podcasts/cache"
 DPC="$DM_tl/Podcasts/.conf"
 export stnrd=0
@@ -31,7 +35,8 @@ play_itep() {
             
 get_itep() {
     unset trgt srce icon stnrd file mime
-    if [ ${f} -gt 5 -o ! -d "${DM_tl}/Podcasts/cache" ]; then
+    if [ ${f} -gt 5 ] || [ ! -d "${DM_tl}/Podcasts/cache" ]; then
+        source "$DS/ifs/cmns.sh"
         msg "$(gettext "An error has occurred. Playback stopped")" dialog-information &
         "$DS/stop.sh" 2
     fi
@@ -73,113 +78,122 @@ audio_file() {
     fi
 }
 
-if [ -f "$DT/play2lck" ]; then
-    item="$(< "$DT/play2lck")"
-    echo "1" > "$DT/playlck"
+if [ "$1" = "_video_" ]; then
+    if [ -n "${altrvi}" ]; then
+        check_alt_player "${altrvi}" &
+        while read -r item; do
+            video_file 0 "$item" >> "$DT/list.m3u"
+        done < "$DPC/watch.tsk"
+        sed -i '/^$/d' "$DT/list.m3u"
+        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+        echo "0" > "$DT/playlck"
+        ${altrvi} "$DT/list.m3u" &
+    else
+        sleep 1
+        while read -r item; do
+            _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
+        done < "$DPC/watch.tsk"
+        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+        mplayer -noconsolecontrols -name Idiomind \
+        -title "Idiomind (mplayer)" \
+        -playlist "$DT/list.m3u"; wait
+    fi
     
-    if [ "$item" == "video" ]; then
-        
-        if [ -n "${altrvi}" ]; then
-            while read -r item; do
-                video_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/watch.tsk"
-            sed -i '/^$/d' "$DT/list.m3u"
-            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            echo "0" > "$DT/playlck"
-            ${altrvi} "$DT/list.m3u"
-        else
-            sleep 1
-            while read -r item; do
-                _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/watch.tsk"
-            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            mplayer -noconsolecontrols -name Idiomind \
-            -title "Idiomind (mplayer)" \
-            -playlist "$DT/list.m3u"; wait
-        fi
+    if [ -d $DT ]; then find $DT -maxdepth 1 \
+    -type f -name '*.m3u' -exec rm -fr {} \;; fi
+    
+    echo "1" > "$DT/playlck"
+    exit 0
 
-    elif [ "$item" == "audio" ]; then
+elif [ "$1" = "_audio_" ]; then
+    if [ -n "${altrau}" ]; then
+        check_alt_player "${altrau}" &
+        while read -r item; do
+            audio_file 0 "$item" >> "$DT/list.m3u"
+        done < "$DPC/listen.tsk"
+        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+        ${altrau} "$DT/list.m3u" &
+    else
+        sleep 1
+        while read -r item; do get_itep
+            [ "$(< "$DT/playlck")" = 0 ] && break
+            echo "${trgt}" > "$DT/playlck"
+            _stop=1; play_itep; sleep 2
+        done < "$DPC/listen.tsk"
+    fi
+    
+    if [ -d $DT ]; then find $DT -maxdepth 1 \
+    -type f -name '*.m3u' -exec rm -fr {} \;; fi
+    
+    echo "0" > "$DT/playlck"
+    exit 0
+    
+elif [ "$1" = "_favs_" ]; then
+    if [ -z "${altrau}" -a -z "${altrvi}" ]; then
+        check_alt_player "${altrvi}" &
+        check_alt_player "${altrau}" &
+        sleep 1
+        while read -r item; do get_itep
+            [ "$(< "$DT/playlck")" == 0 ] && break
+            echo "$trgt" > "$DT/playlck"
+            _stop=1; play_itep; sleep 2
+        done < "$DPC/2.lst"
+    else
         if [ -n "${altrau}" ]; then
+            check_alt_player "${altrau}" &
             while read -r item; do
                 audio_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/listen.tsk"
+            done < "$DPC/2.lst"
+            sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            ${altrau} "$DT/list.m3u"
+            ${altrau} "$DT/list.m3u" &
         else
             sleep 1
-            while read -r item; do get_itep
-                [ "$(< "$DT/playlck")" == 0 ] && break
-                echo "${trgt}" > "$DT/playlck"
-                _stop=1; play_itep; sleep 2
-            done < "$DPC/listen.tsk"
-        fi
-        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
-        
-    elif [ "$item" == "favs" ]; then
-    
-        if [ -z "${altrau}" -a -z "${altrvi}" ]; then
-            sleep 1
+            while read -r item; do
+                audio_file 1 "$item" >> "$DT/list.m3u"
+            done < "$DPC/2.lst"
             while read -r item; do get_itep
                 [ "$(< "$DT/playlck")" == 0 ] && break
                 echo "$trgt" > "$DT/playlck"
                 _stop=1; play_itep; sleep 2
-            done < "$DPC/2.lst"
-        else
-            if [ -n "${altrau}" ]; then
-                while read -r item; do
-                    audio_file 0 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
-                sed -i '/^$/d' "$DT/list.m3u"
-                echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-                ${altrau} "$DT/list.m3u"
-            else
-                sleep 1
-                while read -r item; do
-                    audio_file 1 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
-                while read -r item; do get_itep
-                    [ "$(< "$DT/playlck")" == 0 ] && break
-                    echo "$trgt" > "$DT/playlck"
-                    _stop=1; play_itep; sleep 2
-                done < "$DT/list.m3u"
-            fi
-            if [ -n "${altrvi}" ]; then
-                while read -r item; do
-                    video_file 0 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
-                sed -i '/^$/d' "$DT/list.m3u"
-                echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-                ${altrvi} "$DT/list.m3u"
-            else
-                sleep 1
-                while read -r item; do
-                    video_file 1 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
-                while read -r item; do get_itep
-                    [ "$(< "$DT/playlck")" == 0 ] && break
-                    echo "$trgt" > "$DT/playlck"
-                    _stop=1; play_itep; sleep 2
-                done < "$DT/list.m3u"
-            fi
+            done < "$DT/list.m3u"
         fi
-        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
-
-    else
-        fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
-        if [ -f "$DMC/$fname.mp3" ]; then
-            echo "${item}" > "$DT/playlck"
-            echo "${item}" > "$DT/play2lck"
-            "$DS"/play.sh play_file "$DMC/$fname.mp3" "${item}"
-            [ -e "$DT/playlck" ] && echo 0 > "$DT/playlck"
+        if [ -n "${altrvi}" ]; then
+            check_alt_player "${altrvi}" &
+            while read -r item; do
+                video_file 0 "$item" >> "$DT/list.m3u"
+            done < "$DPC/2.lst"
+            sed -i '/^$/d' "$DT/list.m3u"
+            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+            ${altrvi} "$DT/list.m3u" &
         else
-            notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
+            sleep 1
+            while read -r item; do
+                video_file 1 "$item" >> "$DT/list.m3u"
+            done < "$DPC/2.lst"
+            while read -r item; do get_itep
+                [ "$(< "$DT/playlck")" == 0 ] && break
+                echo "$trgt" > "$DT/playlck"
+                _stop=1; play_itep; sleep 2
+            done < "$DT/list.m3u"
         fi
     fi
+    
+    if [ -d $DT ]; then find $DT -maxdepth 1 \
+    -type f -name '*.m3u' -exec rm -fr {} \;; fi
+    
+    echo "1" > "$DT/playlck"
+    exit 0
+fi
 
-elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; then
+
+
+if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; then
 
     if [ ${ekeep} = TRUE ]; then
         if [ -z "${altrau}" -a -z "${altrvi}" ]; then
+            check_alt_player "${altrvi}" &
+            check_alt_player "${altrau}" &
             sleep 1
             while read -r item; do get_itep
                 echo "$trgt" > "$DT/playlck"
@@ -187,6 +201,7 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
             done < "$DPC/2.lst"
         else
             if [ -n "${altrau}" ]; then
+                check_alt_player "${altrau}" &
                 while read -r item; do
                     audio_file 0 "$item" >> "$DT/list.m3u"
                 done < "$DPC/2.lst"
@@ -204,6 +219,7 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
                 done < "$DT/list.m3u"
             fi
             if [ -n "${altrvi}" ]; then
+                check_alt_player "${altrvi}" &
                 while read -r item; do
                     video_file 0 "$item" >> "$DT/list.m3u"
                 done < "$DPC/2.lst"
@@ -221,11 +237,13 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
                 done < "$DT/list.m3u"
             fi
         fi
-        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+         if [ -d $DT ]; then find $DT -maxdepth 1 \
+        -type f -name '*.m3u' -exec rm -fr {} \;; fi
     fi
     if [ ${eaudio} = TRUE ]; then
 
         if [ -n "${altrau}" ]; then
+            check_alt_player "${altrau}" &
             while read -r item; do
                 audio_file 0 "$item" >> "$DT/list.m3u"
             done < "$DPC/1.lst"
@@ -238,11 +256,12 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
                 _stop=1; _play; sleep 2
             done < "$DPC/1.lst"
         fi
-        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+         if [ -d $DT ]; then find $DT -maxdepth 1 \
+        -type f -name '*.m3u' -exec rm -fr {} \;; fi
     fi
     if [ ${evideo} = TRUE ]; then
-
         if [ -n "${altrvi}" ]; then
+            check_alt_player "${altrvi}" &
             while read -r item; do
                 video_file 0 "$item" >> "$DT/list.m3u"
             done < "$DPC/1.lst"
@@ -259,6 +278,7 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
             -title "Idiomind (mplayer)" \
             -playlist "$DT/list.m3u"; wait
         fi
-        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+         if [ -d $DT ]; then find $DT -maxdepth 1 \
+        -type f -name '*.m3u' -exec rm -fr {} \;; fi
     fi
 fi

@@ -364,7 +364,7 @@ function update() {
             cp "$DCP/.2.lst" "$DCP/2.lst"
         fi
         if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
-            echo "fixed=TRUE" > "$DC_a/Podcasts_tasks.cfg"
+            echo "fixed=\"TRUE\"" > "$DC_a/Podcasts_tasks.cfg"
         fi
         cleanups "$DCP/read.tsk" "$DCP/watch.tsk" "$DCP/listen.tsk"
         if [ -e "$DCP/1.lst" ] && [[ $(wc -l < "$DCP/1.lst") \
@@ -1013,18 +1013,15 @@ function sync() {
 
 function tasks() {
 
-    if [[ "$2" == "$(gettext "Watch: Recent videos")"* ]]; then
-        echo "video" > "$DT/play2lck"
-        "$DS/stop.sh" 2; sleep 1
-        "$DS/ifs/mods/chng/podcasts.sh"
-    elif [[ "$2" == "$(gettext "Listen: Recent audios")"* ]]; then
-        echo "audio" > "$DT/play2lck"
-        "$DS/stop.sh" 2; sleep 1
-        "$DS/ifs/mods/chng/podcasts.sh"
-    elif [[ "$2" == "$(gettext "Watch or listen: Favorite episodes")"* ]]; then
-        echo "favs" > "$DT/play2lck"
-        "$DS/stop.sh" 2; sleep 1
-        "$DS/ifs/mods/chng/podcasts.sh"
+    if [[ "$2" = "$(gettext "Watch: Recent videos")"* ]]; then
+        "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
+        "$DS/ifs/mods/chng/podcasts.sh" "_video_"
+    elif [[ "$2" = "$(gettext "Listen: Recent audios")"* ]]; then
+        "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
+        "$DS/ifs/mods/chng/podcasts.sh" "_audio_"
+    elif [[ "$2" = "$(gettext "Watch or listen: Favorite episodes")"* ]]; then
+        "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
+        "$DS/ifs/mods/chng/podcasts.sh" "_favs_"
     else
         export item
         vwr

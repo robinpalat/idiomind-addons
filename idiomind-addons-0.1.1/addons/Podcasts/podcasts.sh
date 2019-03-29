@@ -306,7 +306,7 @@ function podmode() {
     yad --form --tabnum=3 \
     --plug=$KEY \
     --borders=10 --columns=2 \
-    --field="<small><b>$info$infolabel</b></small>":LBL " " \
+    --field="<small><b>$info</b></small>$infolabel":LBL " " \
     --field=" ":LBL " " \
     --field=" ":LBL " " \
     --field=" $(gettext "Subscriptions") ":FBTN "$cmd_sub" \
@@ -521,6 +521,12 @@ function update() {
                                     mv -f ./"media.$ex" "$DMC/$fname.$ex"
                                     eyeD3 --encoding=$eyed3_encoding -t "${title}" \
                                     -a "${channel}" -A "Podcasts" "$DMC/$fname.$ex"
+                                    
+                                    if [ -z "$link" ]; then
+                                        link="http://idiomind.sourceforge.io/maintenance.html"
+                                        export link
+                                    fi
+                                    
                                     mkhtml
                                     if [[ -s "$DCP/1.lst" ]]; then
                                         sed -i -e "1i${title}\\" "$DCP/1.lst"
@@ -616,6 +622,10 @@ function update() {
                                 
                                 export tp
                                 get_images
+                                if [ -z "$link" ]; then
+                                    link="http://idiomind.sourceforge.io/maintenance.html"
+                                    export link
+                                fi
                                 mkhtml
                                 
                                 if [[ -s "$DCP/1.lst" ]]; then
@@ -733,11 +743,11 @@ function update() {
         cleanups "$DC_a/Podcasts${tlng}_tsk"
        
         if [ ${ait} -gt 0 ]; then
-            lbltp="$(gettext "Listen: Recent audios") ($ait)"
+            lbltp="$(gettext "Listen: Recent audios")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
         if [ ${vit} -gt 0 ]; then
-            lbltp="$(gettext "Watch: Recent videos") ($vit)"
+            lbltp="$(gettext "Watch: Recent videos")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
         if [[ ${fav_list} -gt 0 ]]; then

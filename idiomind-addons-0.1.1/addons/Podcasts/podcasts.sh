@@ -53,7 +53,18 @@ function dlg_optns() {
             echo -e "${sets[${n}]}=\"FALSE\"" >> "$DCP/podcasts.cfg"
             ((n=n+1))
         done
+        sed -i "s/altrvi=\"FALSE\"/altrvi=\"\"/g" "$DCP/podcasts.cfg"
     fi
+
+    ( 
+    if [ -n "$altrvi" ]; then
+        if ! which "$altrvi" >/dev/null; then
+            sleep 2
+            msg "$(gettext "The specified path for the video player does not exist")" info
+        fi
+    fi
+    ) &
+    
     CNFG="$(yad --form --title="$(gettext "Options")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
@@ -170,7 +181,7 @@ function dlg_links() {
                     "$DSP/podcasts.sh" set_channel "${lnk}" ${n}
                 fi
             else
-                cleanups"$DCP/${n}.rss"
+                cleanups "$DCP/${n}.rss"
             fi
         n=$((n+1)); [ ${n} -gt 20 ] && break
         done
@@ -232,7 +243,7 @@ function dlg_subs() {
     --window-icon=idiomind \
     --scroll --mouse \
     --width=450 --height=340 --borders=8 \
-    --field="$(gettext "Configure feed url from either podcast or any convenient news source")":LBL " " \
+    --field="$(gettext "Add URL of podcasts about languages")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
     --field="$(gettext "Suggested Podcasts")":FBTN "$DSP/podcasts.sh 'dlg_links'" \
@@ -322,6 +333,8 @@ function update() {
     include "$DS/ifs/mods/add"
     sets=( 'channel' 'link' 'logo' 'ntype' \
     'nmedia' 'ntitle' 'nsumm' 'nimage' 'url' )
+    
+    export fav_list="$(wc -l < "$DCP/.2.lst")"
 
     conditions() {
         if ps -A |pgrep -f "podcasts.sh set_channel"; then
@@ -350,6 +363,10 @@ function update() {
         != $(wc -l < "$DCP/.2.lst") ]]; then
             cp "$DCP/.2.lst" "$DCP/2.lst"
         fi
+        if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
+            echo "fixed=TRUE" > "$DC_a/Podcasts_tasks.cfg"
+        fi
+        cleanups "$DCP/read.tsk" "$DCP/watch.tsk" "$DCP/listen.tsk"
         if [ -e "$DCP/1.lst" ] && [[ $(wc -l < "$DCP/1.lst") \
         != $(wc -l < "$DCP/.1.lst") ]]; then
             cp "$DCP/.1.lst" "$DCP/1.lst"
@@ -433,7 +450,7 @@ function update() {
     }
     
     fetch_podcasts() {
-        n=0; d=0
+        n=0; d=0; tit=0; ait=0; vit=0
         include "$DS/ifs/mods/add"
         source "$DS/default/sets.cfg"
         lgt=${tlangs[$tlng]}
@@ -511,16 +528,17 @@ function update() {
                                         echo "${title}" > "$DCP/1.lst"
                                     fi
                                     
-                                    [ $tp = aud ] && lbltp="$(gettext "Listen:")"
-                                    [ $tp = vid ] && lbltp="$(gettext "Watch:")"
-                                    ttitle="$(sed 's/\$/\\$/g' <<< "$title")"
-                                    taskItem="$lbltp ${ttitle}"
-                                    [  $(wc -c <<< $ttitle) -gt 60 ] && \
-                                    taskItem="$lbltp ${ttitle:0:60}..."
-                                    if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.$tlng" >/dev/null 2>&1; then
-                                        echo -e "${taskItem}" >> "$DC_a/Podcasts.$tlng"
+                                    taskItem="$(sed 's/\$/\\$/g' <<< "$title")"
+
+                                    if [ $tp = aud ]; then 
+                                        echo -e "${taskItem}" >> "$DCP/listen.tsk"
+                                        let ait++
                                     fi
-                                    
+                                    if [ $tp = vid ]; then 
+                                        echo -e "${taskItem}" >> "$DCP/watch.tsk"
+                                        let vit++
+                                    fi
+
                                     if grep '^$' "$DCP/1.lst"; then
                                         sed -i '/^$/d' "$DCP/1.lst"
                                     fi
@@ -532,7 +550,7 @@ function update() {
                                     |sed -e 's/^[ \t]*//' \
                                     |tr -d '\n' > "$DMC/$fname.item"
                                     let d++
-                                    echo -e "$(gettext "Latest downloads:") $d" \
+                                    echo -e "$(gettext "New Episodes:") $d" \
                                     |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
                                 fi
                             fi
@@ -605,16 +623,11 @@ function update() {
                                 else 
                                     echo "${title}" > "$DCP/1.lst"
                                 fi
-                                
-                                lbltp="$(gettext "Read:")"
-                                ttitle="$(sed 's/\$/\\$/g' <<< "$title")"
-                                taskItem="$lbltp ${ttitle}"
-                                [  $(wc -c <<< $ttitle) -gt 60 ] && \
-                                taskItem="$lbltp ${ttitle:0:60}..."
-                                if ! grep -Fxq "${taskItem}" < "$DC_a/Podcasts.$tlng" >/dev/null 2>&1; then
-                                    echo -e "${taskItem}" >> "$DC_a/Podcasts.$tlng"
-                                fi
-                                
+
+                                let tit++
+                                taskItem="$(sed 's/\$/\\$/g' <<< "$title")"
+                                echo -e "${taskItem}" >> "$DCP/read.tsk"
+
                                 if grep '^$' "$DCP/1.lst"; then
                                     sed -i '/^$/d' "$DCP/1.lst"
                                 fi
@@ -709,24 +722,34 @@ function update() {
     \r$(gettext "Latest downloads:") $new_episodes" \
     |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
 
-    idiomind tasks
     if [[ ${new_episodes} -gt 0 ]]; then
         if [[ ${new_episodes} -eq 1 ]]; then
-            notify-send -i idiomind "$(gettext "Podcasts: New content")" \
+            notify-send -i idiomind "$(gettext "New content")" \
             "$(gettext "1 episode downloaded")" -t 8000
         elif [[ ${new_episodes} -gt 1 ]]; then
-            notify-send -i idiomind "$(gettext "Podcasts: New content")" \
+            notify-send -i idiomind "$(gettext "New content")" \
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
-        if [ $(cat "$DC_a/Podcasts.$tlng" |wc -l) -gt 8 ]; then
-            tail -n 8 "$DC_a/Podcasts.$tlng" > "$DT/Podcasts.$tlng"
-            mv -f "$DT/Podcasts.$tlng" "$DC_a/Podcasts.$tlng"
+        cleanups "$DC_a/Podcasts${tlng}_tsk"
+       
+        if [ ${ait} -gt 0 ]; then
+            lbltp="$(gettext "Listen: Recent audios") ($ait)"
+            echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
+        if [ ${vit} -gt 0 ]; then
+            lbltp="$(gettext "Watch: Recent videos") ($vit)"
+            echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
+        fi
+        if [[ ${fav_list} -gt 0 ]]; then
+            lbltp="$(gettext "Watch or listen: Favorite episodes")"
+            echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
+        fi
+        idiomind tasks
         removes
     else
         if [[ ${2} = 1 ]]; then
             notify-send -i idiomind \
-            "$(gettext "Podcasts: Update finished")" \
+            "$(gettext "Update finished")" \
             "$(gettext "Has not changed since last update")" -t 8000
         fi
     fi
@@ -979,15 +1002,18 @@ function sync() {
  
 
 function tasks() {
-    i="$(echo "$2" |sed -e 's/\.\.\.//;')"
-    item="$(grep -m 1 "$i" < "$DCP/1.lst")"
-    fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
-    if [ -f "$DMC/$fname.mp3" ]; then
-        pod=$(grep -o "channel"=\"[^\"]* "$DMC/$fname.item" |grep -o '[^"]*$')
-        epi=$(grep -o "title"=\"[^\"]* "$DMC/$fname.item" |grep -o '[^"]*$')
-        (sleep 2; notify-send -i "idiomind" "${pod}" "${epi}" -t 10000) &
+
+    if [[ "$2" == "$(gettext "Watch: Recent videos")"* ]]; then
+        echo "video" > "$DT/play2lck"
         "$DS/stop.sh" 2; sleep 1
-        echo "${item}" > "$DT/play2lck"
+        "$DS/ifs/mods/chng/podcasts.sh"
+    elif [[ "$2" == "$(gettext "Listen: Recent audios")"* ]]; then
+        echo "audio" > "$DT/play2lck"
+        "$DS/stop.sh" 2; sleep 1
+        "$DS/ifs/mods/chng/podcasts.sh"
+    elif [[ "$2" == "$(gettext "Watch or listen: Favorite episodes")"* ]]; then
+        echo "favs" > "$DT/play2lck"
+        "$DS/stop.sh" 2; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh"
     else
         export item

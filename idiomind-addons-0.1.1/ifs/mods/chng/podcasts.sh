@@ -6,14 +6,29 @@ file_cfg="${DM_tl}/Podcasts/.conf/podcasts.cfg"
 evideo="$(grep -oP '(?<=evideo=\").*(?=\")' "${file_cfg}")"
 eaudio="$(grep -oP '(?<=eaudio=\").*(?=\")' "${file_cfg}")"
 ekeep="$(grep -oP '(?<=ekeep=\").*(?=\")' "${file_cfg}")"
-altrau="$(grep -oP '(?<=altrau=\").*(?=\")' "${file_cfg}")"
+altrau="" # alternative audio player
 altrvi="$(grep -oP '(?<=altrvi=\").*(?=\")' "${file_cfg}")"
+( 
+    if [ -n "$altrvi" ]; then
+        if ! which "$altrvi" >/dev/null; then
+            sleep 2
+            msg "$(gettext "The specified path for the video player does not exist")" info
+            "$DS/stop.sh" 2 &
+        fi
+    fi
+) &
+
 [ -d "$DT"/ ] && find "$DT"/ -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
 DMC="$DM_tl/Podcasts/cache"
 DPC="$DM_tl/Podcasts/.conf"
 export stnrd=0
 f=0
 
+play_itep() {
+    [ ${mime} = 1 ] && notify-send -i "${icon}" "${trgt}" "${srce}" -t 5000 &
+    "$DS/play.sh" play_file "${file}" "${trgt}"
+}
+            
 get_itep() {
     unset trgt srce icon stnrd file mime
     if [ ${f} -gt 5 -o ! -d "${DM_tl}/Podcasts/cache" ]; then
@@ -43,35 +58,126 @@ get_itep() {
     export trgt srce icon stnrd file mime
 }
 
+video_file() {
+    fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
+    if [ -e "$DMC/$fname.m4v" ]; then
+    [ $1 = 0 ] && echo "$DMC/$fname.m4v" || echo "$2"; fi
+    if [ -e "$DMC/$fname.mp4" ]; then
+    [ $1 = 0 ] && echo "$DMC/$fname.mp4" || echo "$2"; fi
+}
 
-if [ -e "$DT/play2lck" ]; then
-    item="$(cat "$DT/play2lck")"
-    fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
+audio_file() {
+    fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
     if [ -f "$DMC/$fname.mp3" ]; then
-        echo "${item}" > "$DT/playlck"
-        echo "${item}" > "$DT/play2lck"
-        "$DS"/play.sh play_file "$DMC/$fname.mp3" "${item}"
-        [ -e "$DT/playlck" ] && echo 0 > "$DT/playlck"
+    [ $1 = 0 ] && echo "$DMC/$fname.mp3" || echo "$2"
+    fi
+}
+
+if [ -f "$DT/play2lck" ]; then
+    item="$(< "$DT/play2lck")"
+    echo "1" > "$DT/playlck"
+    
+    if [ "$item" == "video" ]; then
+        
+        if [ -n "${altrvi}" ]; then
+            while read -r item; do
+                video_file 0 "$item" >> "$DT/list.m3u"
+            done < "$DPC/watch.tsk"
+            sed -i '/^$/d' "$DT/list.m3u"
+            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+            echo "0" > "$DT/playlck"
+            ${altrvi} "$DT/list.m3u"
+        else
+            sleep 1
+            while read -r item; do
+                _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
+            done < "$DPC/watch.tsk"
+            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+            mplayer -noconsolecontrols -name Idiomind \
+            -title "Idiomind (mplayer)" \
+            -playlist "$DT/list.m3u"; wait
+        fi
+
+    elif [ "$item" == "audio" ]; then
+        if [ -n "${altrau}" ]; then
+            while read -r item; do
+                audio_file 0 "$item" >> "$DT/list.m3u"
+            done < "$DPC/listen.tsk"
+            echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+            ${altrau} "$DT/list.m3u"
+        else
+            sleep 1
+            while read -r item; do get_itep
+                [ "$(< "$DT/playlck")" == 0 ] && break
+                echo "${trgt}" > "$DT/playlck"
+                _stop=1; play_itep; sleep 2
+            done < "$DPC/listen.tsk"
+        fi
+        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+        
+    elif [ "$item" == "favs" ]; then
+    
+        if [ -z "${altrau}" -a -z "${altrvi}" ]; then
+            sleep 1
+            while read -r item; do get_itep
+                [ "$(< "$DT/playlck")" == 0 ] && break
+                echo "$trgt" > "$DT/playlck"
+                _stop=1; play_itep; sleep 2
+            done < "$DPC/2.lst"
+        else
+            if [ -n "${altrau}" ]; then
+                while read -r item; do
+                    audio_file 0 "$item" >> "$DT/list.m3u"
+                done < "$DPC/2.lst"
+                sed -i '/^$/d' "$DT/list.m3u"
+                echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+                ${altrau} "$DT/list.m3u"
+            else
+                sleep 1
+                while read -r item; do
+                    audio_file 1 "$item" >> "$DT/list.m3u"
+                done < "$DPC/2.lst"
+                while read -r item; do get_itep
+                    [ "$(< "$DT/playlck")" == 0 ] && break
+                    echo "$trgt" > "$DT/playlck"
+                    _stop=1; play_itep; sleep 2
+                done < "$DT/list.m3u"
+            fi
+            if [ -n "${altrvi}" ]; then
+                while read -r item; do
+                    video_file 0 "$item" >> "$DT/list.m3u"
+                done < "$DPC/2.lst"
+                sed -i '/^$/d' "$DT/list.m3u"
+                echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+                ${altrvi} "$DT/list.m3u"
+            else
+                sleep 1
+                while read -r item; do
+                    video_file 1 "$item" >> "$DT/list.m3u"
+                done < "$DPC/2.lst"
+                while read -r item; do get_itep
+                    [ "$(< "$DT/playlck")" == 0 ] && break
+                    echo "$trgt" > "$DT/playlck"
+                    _stop=1; play_itep; sleep 2
+                done < "$DT/list.m3u"
+            fi
+        fi
+        find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
+
     else
-        notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
+        fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
+        if [ -f "$DMC/$fname.mp3" ]; then
+            echo "${item}" > "$DT/playlck"
+            echo "${item}" > "$DT/play2lck"
+            "$DS"/play.sh play_file "$DMC/$fname.mp3" "${item}"
+            [ -e "$DT/playlck" ] && echo 0 > "$DT/playlck"
+        else
+            notify-send -i "idiomind" "$(gettext "No such file or directory")" "${epi}" -t 5000; exit 1
+        fi
     fi
 
 elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; then
 
-    video_file() {
-            fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
-            if [ -e "$DMC/$fname.m4v" ]; then
-            [ $1 = 0 ] && echo "$DMC/$fname.m4v" || echo "$2"; fi
-            if [ -e "$DMC/$fname.mp4" ]; then
-            [ $1 = 0 ] && echo "$DMC/$fname.mp4" || echo "$2"; fi
-    }
-    audio_file() {
-            fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
-            if [ -f "$DMC/$fname.mp3" ]; then
-            [ $1 = 0 ] && echo "$DMC/$fname.mp3" || echo "$2"
-            fi
-    }
-    
     if [ ${ekeep} = TRUE ]; then
         if [ -z "${altrau}" -a -z "${altrvi}" ]; then
             sleep 1
@@ -155,5 +261,4 @@ elif [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; 
         fi
         find $DT -maxdepth 1 -type f -name '*.m3u' -exec rm -fr {} \;
     fi
-
 fi

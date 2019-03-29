@@ -6,7 +6,7 @@ source "$DS/ifs/cmns.sh"
 DC_a="$HOME/.config/idiomind/addons"
 
 name="$(gettext "Save as audio")"
-label="$(gettext "Does not need configuration.")"
+label="<small>$(gettext "Does not need configuration.")</small>"
 
 c=$(yad --form --title="$name" \
 --name=Idiomind --class=Idiomind \

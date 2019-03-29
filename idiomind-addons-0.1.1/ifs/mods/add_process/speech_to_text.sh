@@ -67,7 +67,6 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             vad -T 0.6 -p 0.2 -t 5 fade 0.1 reverse norm -0.5
             rm -f "$DT_r/rv.mp3"
             mp3splt -s -o @n *.mp3
-            
             if ls [0-9]*.mp3 1> /dev/null 2>&1; then
                 c="$(ls [0-9]*.mp3 | wc -l)"
                 if [[ ${c} -ge 1 ]]; then 
@@ -77,11 +76,9 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                 mv -f ./"c_rv.mp3" ./"1.mp3"
             fi
             [ -f "$DT_r/c_rv.mp3" ] && rm -f "$DT_r/c_rv.mp3"
-
         elif grep ".tar" <<< "${fl: -4}"; then
             cp -f "$fl" "$DT_r/rv.tar"
             tar -xvf "$DT_r/rv.tar"
-
         elif grep ".tar.gz" <<< "${fl: -7}"; then
             cp -f "$fl" "$DT_r/rv.tar.gz"
             tar -xzvf "$DT_r/rv.tar.gz"
@@ -110,15 +107,10 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         while [[ ${erw} -le ${lns} ]]; do
             [ ! -f "$DT/n_s_pr" ] && break
             unset trgt; unset _item
-            
             if [ -f "$DT_r/${erw}.mp3" ]; then
-
                 if [ ! -f "$DT_r/index" ]; then
-                  
                     sox "$DT_r/${erw}.mp3" "$DT_r/info.flac" rate 16k
-                   
                     data="$(audio_recog "$DT_r/info.flac" $lgt $lgt $apikeygo)"
-                    
                     if [ -z "${data}" ]; then
                         msg "The key is invalid or has exceeded its quota of daily requests\n" error
                         cleanups "$DT_r" "$lckpr"
@@ -131,11 +123,9 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     |sed 's/","confidence"://g' \
                     |sed "s/[0-9].[0-9]//g" \
                     |sed 's/}],"final":true}],"result_index":0}//g')"
-
                 else
                     trgt="$(sed -n ${erw}p "$DT_r/index" |sed 's/^\s*./\U&\E/g')"
                 fi
-
                 if [ -f "$DT_r/translation" ]; then
                     export srce="$(sed -n ${erw}p "$DT_r/translation" |sed 's/^\s*./\U&\E/g')"
                 else
@@ -143,7 +133,6 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     srce="$(translate "${trgt}" $lgt $lgs |sed ':a;N;$!ba;s/\n/ /g')"
                     export srce="$(clean_2 "${srce}")"
                 fi
-
                 rm -f "$DT_r/info.flac" "$DT_r/info.ret"
             fi
             echo "${trgt}" >> "$DT_r/trgt"
@@ -161,7 +150,6 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             unset trgt; unset _item
             trgt="$(sed -n ${erw}p "$DT_r/trgt")"
             srce="$(sed -n ${erw}p "$DT_r/srce")"
-            
              if [ ${#trgt} -ge 400 ]; then
                     echo -e "$(gettext "Sentence too long")\n$erw) $trgt\n\n" >> "$DT_r/slog"
                 elif [ -z "$trgt" ]; then
@@ -170,10 +158,8 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     index 2
                     mv -f "$DT_r/${erw}.mp3" "${DM_tlt}/$cdid.mp3"
                     echo -e "$(gettext "Text missing:")\n$trgt\n\n" >> "$DT_r/slog"
-                    
                 elif [[ $(wc -l < "${DC_tlt}/data") -ge 200 ]]; then
                     echo -e "$(gettext "Maximum number of notes has been exceeded")\n$erw) $trgt\n\n" >> "$DT_r/slog"
-                    
                 else
                     if [ $(wc -${c} <<< "${trgt}") -eq 1 ]; then
                     export trgt="$(clean_1 "${trgt}")"
@@ -188,7 +174,6 @@ if [[ ${conten^} = ${char_ini^} ]]; then
                     else
                         echo -e "$erw) $trgt\n\n" >> "$DT_r/wlog"
                     fi 
-
                 elif [ $(wc -${c} <<< "$trgt") -ge 1 ]; then
                     ( 
                         export DT_r; sentence_p 1
@@ -215,13 +200,11 @@ if [[ ${conten^} = ${char_ini^} ]]; then
         if [ ${wadds} = 1 ]; then
             W=" $(gettext "word")"
         fi
-        
         sadds=$(sed '/^$/d' "$DT_r/adds" |wc -l)
         S=" $(gettext "sentences")"
         if [ ${sadds} = 1 ]; then
             S=" $(gettext "sentence")"
         fi
-        
         _log=$(cat "$DT_r/slog" "$DT_r/wlog")
         adds=$(cat "$DT_r/adds" "$DT_r/addw" |sed '/^$/d' |wc -l)
         if [ ${adds} -ge 1 ]; then
@@ -229,7 +212,7 @@ if [[ ${conten^} = ${char_ini^} ]]; then
             "$(gettext "Have been added:")\n$sadds$S$wadds$W" -t 2000 &
         fi
         
-        [ -n "$_log" ] && echo "$_log" >> "${DC_tlt}/note.err"
+        [ -n "$_log" ] && echo "$_log" >> "${DC_tlt}/note.inf"
         cleanups "$DT_r" "$DT/n_s_pr"
     fi
     exit 0

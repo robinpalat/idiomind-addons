@@ -15,14 +15,14 @@ ini=$(grep -o ini=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
 key=$(grep -o key=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
 c=$(yad --form --title="$(gettext "Speech to text")" \
 --name=Idiomind --class=Idiomind \
---text="<b>$name</b>\n$label" \
+--text="<b>$name</b>\n<small>$label</small>" \
 --window-icon=idiomind --align=right --center \
 --on-top --skip-taskbar --expand-column=3 \
 --width=450 --height=250 --borders=15 \
 --always-print-result --editable --print-all \
 --field="\t$(gettext "Use this character to invoke:")" "$ini" \
 --field="Key" "$key" \
---field="For this feature you need to provide a key. Please get one from: <a href='$link'>wwww.console.developers.google.com</a>\n":lbl " " \
+--field="<small>For this feature you need to provide a key. Please get one from: <a href='$link'>wwww.console.developers.google.com</a></small>\n":lbl " " \
 --button="$(gettext "Save")!gtk-apply":0 \
 --button="$(gettext "Close")":1)
 ret=$?

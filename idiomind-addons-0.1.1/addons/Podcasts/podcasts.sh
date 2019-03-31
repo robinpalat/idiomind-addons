@@ -186,7 +186,6 @@ function dlg_links() {
         n=$((n+1)); [ ${n} -gt 20 ] && break
         done
     elif [ ${ret} = 2 ]; then
-
         checkpods
         "$DSP/podcasts.sh" dlg_links & return
 
@@ -333,8 +332,6 @@ function update() {
     include "$DS/ifs/mods/add"
     sets=( 'channel' 'link' 'logo' 'ntype' \
     'nmedia' 'ntitle' 'nsumm' 'nimage' 'url' )
-    
-    export fav_list="$(wc -l < "$DCP/.2.lst")"
 
     conditions() {
         if ps -A |pgrep -f "podcasts.sh set_channel"; then
@@ -448,6 +445,21 @@ function update() {
             cp -f "$DSP/images/text.png" "$DMC/$fname.png"
         fi
     }
+    
+    lst="$(< "$DCP/.2.lst")"
+    fav_list=0
+    for item in "$lst"; do
+        fname=$(echo -n "${item}" |md5sum |rev |cut -c 4- |rev)
+        if [ -f "$DM_tl/Podcasts/cache/$fname.mp3" -o \
+        -f "$DM_tl/Podcasts/cache/$fname.ogg" -o \
+        -f "$DM_tl/Podcasts/cache/$fname.mp4" -o \
+        -f "$DM_tl/Podcasts/cache/$fname.avi" -o \
+        -f "$DM_tl/Podcasts/cache/$fname.m4v" -o \
+        -f "$DM_tl/Podcasts/cache/$fname.mov" ]; then
+            let fav_list++
+        fi
+    done 
+    export fav_list
     
     fetch_podcasts() {
         n=0; d=0; tit=0; ait=0; vit=0
@@ -774,7 +786,9 @@ function update() {
         fi
     fi
     exit
-} >/dev/null 2>&1
+} 
+
+#>/dev/null 2>&1
 
 
 function vwr() {
@@ -825,7 +839,6 @@ function set_channel() {
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items2="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
-    
     # content t2
     xml="$(xsltproc "$DS/default/tp2.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
@@ -868,13 +881,11 @@ function set_channel() {
             then image="$n"; fi
             let n++
         done <<< "${items4}"
-        
         n=3
         while read -r get; do
             if [ $(wc -w <<< "${get}") -ge 1 -a -z "${title}" ]; then title="$n"; break; fi
             let n++
         done <<< "{$items4}"
-        
         n=6
         while read -r get; do
             if [ $(wc -w <<< "${get}") -ge 1 -a -z "${summ}" ]; then summ="$n"; type=2; break; fi
@@ -1012,7 +1023,6 @@ function sync() {
  
 
 function tasks() {
-
     if [[ "$2" = "$(gettext "Watch: Recent video podcasts")"* ]]; then
         "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh" "_video_"

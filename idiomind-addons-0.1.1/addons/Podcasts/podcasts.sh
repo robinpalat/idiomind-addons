@@ -743,11 +743,11 @@ function update() {
         cleanups "$DC_a/Podcasts${tlng}_tsk"
        
         if [ ${ait} -gt 0 ]; then
-            lbltp="$(gettext "Listen: Recent audios")"
+            lbltp="$(gettext "Listen: Recent audio podcasts")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
         if [ ${vit} -gt 0 ]; then
-            lbltp="$(gettext "Watch: Recent videos")"
+            lbltp="$(gettext "Watch: Recent video podcasts")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
         if [[ ${fav_list} -gt 0 ]]; then
@@ -1013,10 +1013,10 @@ function sync() {
 
 function tasks() {
 
-    if [[ "$2" = "$(gettext "Watch: Recent videos")"* ]]; then
+    if [[ "$2" = "$(gettext "Watch: Recent video podcasts")"* ]]; then
         "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh" "_video_"
-    elif [[ "$2" = "$(gettext "Listen: Recent audios")"* ]]; then
+    elif [[ "$2" = "$(gettext "Listen: Recent audio podcasts")"* ]]; then
         "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh" "_audio_"
     elif [[ "$2" = "$(gettext "Watch or listen: Favorite episodes")"* ]]; then

@@ -1,0 +1,23 @@
+Source: idiomind-addons
+Section: x11
+Priority: optional
+Maintainer: Robin Palatnik <robinpalat@users.sourceforge.net>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.7
+Homepage: https://idiomind.sourceforge.net
+
+Package: idiomind-addons
+Architecture: all
+Depends: ${misc:Depends}, idiomind, rsync, xsltproc, eyed3, mp3splt, mp3wrap
+Enhances: idiomind
+Description: Learn languages by podcasts
+ .
+ Idiomind is a vocabulary learning tool based on shell scripts and YAD (GUI)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

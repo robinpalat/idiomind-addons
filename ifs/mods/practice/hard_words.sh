@@ -25,8 +25,6 @@ function addwords() {
 
         python <<PY
 import os, re, sqlite3, sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
 logfile = os.environ['logfile']
 errfilew = os.environ['errfilew']
 lblerr = os.environ['lblerr']

@@ -2,7 +2,8 @@
 # -*- ENCODING: UTF-8 -*-
 
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
-sz=(580 560 480); [[ ${swind} = TRUE ]] && sz=(480 460 400)
+sz=(560 560 480); [[ ${swind} = TRUE ]] && sz=(480 460 400)
+
 f="$(gettext "Favorites<i><small><small> Podcasts</small></small></i>")"
 c="$(gettext "Videos<i><small><small> Podcasts</small></small></i>")"
 b="$(gettext "New episodes<i><small><small> Podcasts</small></small></i>")"
@@ -775,7 +776,7 @@ function update() {
 
 
 function vwr() {
-    sz=(760 480); [[ ${swind} = TRUE ]] && sz=(540 300)
+    sz=(660 380); [[ ${swind} = TRUE ]] && sz=(540 300)
     dir="$DM_tl/Podcasts/cache"
     fname=$(echo -n "${item}" | md5sum | rev | cut -c 4- | rev)
     channel="$(grep -o channel=\"[^\"]* "$dir/${fname}.item" |grep -o '[^"]*$')"
@@ -787,6 +788,7 @@ function vwr() {
         btncmd="'$DSP/podcasts.sh' new_item"
     fi
     btncmd2="'$DSP/podcasts.sh' save_as"
+    _width=${sz[0]}; _height=${sz[1]}
     if [ -f "$dir/$fname.html" ]; then
         uri="$dir/$fname.html"
     else
@@ -794,16 +796,43 @@ function vwr() {
         rm_item 1; rm_item 2
         msg "$(gettext "No such file or directory")\n${topic}\n" error Error & exit 1
     fi
-    #--button="!view-refresh!$(gettext "XXX")":$xxx 'xxx'
-    yad --html --title="${channel}" \
-    --name=Idiomind --class=Idiomind \
-    --encoding=UTF-8 --uri="${uri}" \
-    --window-icon=idiomind --center --on-top \
-    --width=${sz[0]} --height=${sz[1]}  --borders=5 "$btnre" \
-    --button="!document-save-as!$(gettext "Save as")":"${btncmd2}" \
-    --button="${btnlabel}":"${btncmd}" 
-}
+    	export uri channel _height _width
 
+python3 <<PY
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('WebKit2', '4.0')
+from gi.repository import WebKit2, Gtk, Gdk, Gio, GLib
+import signal, os
+uri = os.environ['uri']
+channel = os.environ['channel']
+_width = os.environ['_width']
+_height = os.environ['_height']
+class MainWin(Gtk.Window):
+    def __init__(self):
+        Gtk.Window.__init__(self, title = channel, 
+        skip_pager_hint=True, skip_taskbar_hint=True)
+        self.set_size_request(int(_width), int(_height))
+        self.view = WebKit2.WebView()
+        self.view.load_uri("file://" + uri)
+        box = Gtk.Box()
+        self.add(box)
+        box.pack_start(self.view, True, True, 0)
+        self.connect("destroy", lambda q: Gtk.main_quit())
+        self.show_all()
+def refresh_file(*args):
+    mainwin.view.reload()
+def file_changed(monitor, file, unknown, event):
+    GLib.timeout_add_seconds(2, refresh_file)
+if __name__ == '__main__':
+    gio_file = Gio.File.new_for_path(uri)
+    monitor = gio_file.monitor_file(Gio.FileMonitorFlags.NONE, None)
+    monitor.connect("changed", file_changed)
+    mainwin = MainWin()
+    signal.signal(signal.SIGINT, signal.SIG_DFL) 
+    Gtk.main()
+PY
+}
 
 function set_channel() {
     internet

@@ -69,7 +69,7 @@ function dlg_optns() {
     CNFG="$(yad --form --title="$(gettext "Options")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
-    --window-icon=idiomind \
+    --window-icon=$DS/images/logo.png \
     --scroll --mouse \
     --width=350 --height=360 --borders=8 \
     --field="$(gettext "Checks for new episodes at startup")":CHK "$update" \
@@ -160,7 +160,7 @@ function dlg_links() {
     --name=Idiomind --class=Idiomind  \
     --print-all --print-column=3 \
     --always-print-result --separator="|" \
-    --window-icon=idiomind \
+    --window-icon=$DS/images/logo.png \
     --expand-column=0 --hide-column=3 \
     --center --no-headers \
     --width=520 --height=390 --borders=8 \
@@ -241,7 +241,7 @@ function dlg_subs() {
     CNFG="$(yad --form --title="$(gettext "Subscriptions")" \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
-    --window-icon=idiomind \
+    --window-icon=$DS/images/logo.png \
     --scroll --mouse \
     --width=450 --height=340 --borders=8 \
     --field="$(gettext "Add URL of podcasts about languages")":LBL " " \
@@ -316,7 +316,7 @@ function podmode() {
     yad --notebook --title="Idiomind - $(gettext "Podcasts")" \
     --name=Idiomind --class=Idiomind --key=$KEY \
     --always-print-result \
-    --window-icon=idiomind --image-on-top \
+    --window-icon=$DS/images/logo.png --image-on-top \
     --ellipsize=END --align=right --center \
     --width=${sz[0]} --height=${sz[1]} --borders=5 --tab-borders=0 \
     --tab=" $(gettext "Episodes") " \
@@ -404,7 +404,7 @@ function update() {
         itm="$DMC/$fname.html"
         video="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
         \r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
-        \r<video width=640 height=380 controls>
+        \r<video controls>
         \r<source src=\"$fname.$ex\" type=\"video/mp4\">
         \rYour browser does not support the video tag.</video>"
         audio="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
@@ -1126,7 +1126,7 @@ function delete_all() {
     --image='edit-delete' \
     --name=Idiomind --class=Idiomind \
     --always-print-result --print-all --separator="|" \
-    --window-icon=idiomind --center --on-top \
+    --window-icon=$DS/images/logo.png --center --on-top \
     --width=400 --height=120 --borders=3 \
     --text="$(gettext "Are you sure you want to delete all episodes?")  " "$chk" \
     --button="$(gettext "Cancel")":1 \

@@ -12,7 +12,7 @@ h4 {padding:15px 0 5px 0;margin:0 0 8px 0;font-size:1.2em;color:#69a7ae;font-wei
 img, object {max-height:100%;max-width:100%;}
 p {padding: 0px 0 0px 0; margin:0;}
 .divider {width:99%;height:2px;border-bottom:2px solid #ffffff; margin: 15px 0 15px 0;padding:0;clear:both;}
-video {right:0;bottom:0;min-width:100%;min-height:100%;line-height:1em;background:#000000;width:200;height:200;-moz-border-radius: 5px;border-radius: 5px;}
+video {right:0;bottom:0;min-width:100%;min-height:100%;line-height:1em;background:#000000;-moz-border-radius: 5px;border-radius: 5px;}
 image {right:0;bottom:0;min-width:100%;min-height:100%;background:#000000;width:650;height:410;}
 .title {text-align:left;margin-left:40px;margin-right:40px;}
 .summary {text-align:left;margin-left:50px;margin-right:70px;max-width:600px;font-size:1.0em;line-height:20px;}

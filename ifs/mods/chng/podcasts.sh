@@ -48,6 +48,7 @@ get_itep() {
         if [ -e "$DMC/$fname.mp3" ]; then file="$DMC/$fname.mp3"; mime=1
         elif [ -e "$DMC/$fname.ogg" ]; then file="$DMC/$fname.ogg"; mime=1
         elif [ -e "$DMC/$fname.m4v" ]; then file="$DMC/$fname.m4v"; mime=2
+        elif [ -e "$DMC/$fname.m4a" ]; then file="$DMC/$fname.m4a"; mime=2
         elif [ -e "$DMC/$fname.mp4" ]; then file="$DMC/$fname.mp4"; mime=2
         elif [ -e "$DMC/$fname.avi" ]; then file="$DMC/$fname.avi"; mime=2; fi
         if [ -e "${file}" ]; then
@@ -69,6 +70,8 @@ video_file() {
     [ $1 = 0 ] && echo "$DMC/$fname.m4v" || echo "$2"; fi
     if [ -e "$DMC/$fname.mp4" ]; then
     [ $1 = 0 ] && echo "$DMC/$fname.mp4" || echo "$2"; fi
+    if [ -e "$DMC/$fname.m4a" ]; then
+    [ $1 = 0 ] && echo "$DMC/$fname.m4a" || echo "$2"; fi
 }
 
 audio_file() {

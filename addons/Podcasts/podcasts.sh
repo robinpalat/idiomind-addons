@@ -2,7 +2,8 @@
 # -*- ENCODING: UTF-8 -*-
 
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
-sz=(560 560 480); [[ ${swind} = TRUE ]] && sz=(480 460 400)
+
+sz=(530 560 450); [[ ${swind} = TRUE ]] && sz=(450 460 380)
 
 f="$(gettext "Favorites<i><small><small> Podcasts</small></small></i>")"
 c="$(gettext "Videos<i><small><small> Podcasts</small></small></i>")"
@@ -388,6 +389,7 @@ function update() {
         elif echo "$1" |grep -q ".mp4"; then ex=mp4; tp=vid
         elif echo "$1" |grep -q ".ogg"; then ex=ogg; tp=aud
         elif echo "$1" |grep -q ".m4v"; then ex=m4v; tp=vid
+        elif echo "$1" |grep -q ".m4a"; then ex=m4a; tp=vid
         elif echo "$1" |grep -q ".mov"; then ex=mov; tp=vid
         elif echo "$1" |grep -o ".pdf"; then ex=pdf; tp=txt
         elif echo "${1,,}" |grep -q ".jpg"; then ex=jpg
@@ -428,7 +430,7 @@ function update() {
         \r$summary</div><br><br><div class=\"txttradsum\"><b>$titlesrce</b><br><br>$sumarysrce<br><br></div>
         \r</body>"
         if [[ ${tp} = vid ]]; then
-            if [ $ex = m4v -o $ex = mp4 ]; then t=mp4
+            if [ $ex = m4v -o $ex = mp4 -o $ex = m4a ]; then t=mp4
             elif [ $ex = avi ]; then t=avi; fi
             echo -e "${video}" |sed -e 's/^[ \t]*//' |tr -d '\n' > "$itm"
         elif [[ ${tp} = aud ]]; then
@@ -872,7 +874,7 @@ function set_channel() {
         n=1
         while read -r get; do
             [[ ${n} = 3 || ${n} = 5 || ${n} = 6 ]] && continue
-            if [ -n "$(grep -o -E '\.mp3|\.mp4|\.ogg|\.avi|\.m4v|\.mov|\.flv' <<< "${get}")" -a -z "${media}" ]; then
+            if [ -n "$(grep -o -E '\.mp3|\.mp4|\.ogg|\.avi|\.m4v|\.m4a|\.mov|\.flv' <<< "${get}")" -a -z "${media}" ]; then
             media="$n"; type=1; break; fi
             let n++
         done <<< "${items2}"
@@ -988,6 +990,8 @@ function sync() {
                     echo "./$(nmfile "${item}").mp4" >> "$DT/rsync_list"
                 elif [ -e "$DMC/$(nmfile "${item}").m4v" ]; then
                     echo "./$(nmfile "${item}").m4v" >> "$DT/rsync_list"
+                elif [ -e "$DMC/$(nmfile "${item}").m4a" ]; then
+                    echo "./$(nmfile "${item}").m4a" >> "$DT/rsync_list"
                 fi
             done < <(cat "$DCP/2.lst")
         fi
@@ -1075,6 +1079,7 @@ function save_as() {
     [ -f "$DMC/$fname.mp3" ] && file="$DMC/$fname.mp3"
     [ -f "$DMC/$fname.ogg" ] && file="$DMC/$fname.ogg"
     [ -f "$DMC/$fname.m4v" ] && file="$DMC/$fname.m4v"
+    [ -f "$DMC/$fname.m4a" ] && file="$DMC/$fname.m4a"
     [ -f "$DMC/$fname.mp4" ] && file="$DMC/$fname.mp4"
     cd "$HOME"
     sv=$(yad --file --save --title="$(gettext "Save as")" \

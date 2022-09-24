@@ -3,7 +3,7 @@
 
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
 
-sz=(530 560 450); [[ ${swind} = TRUE ]] && sz=(450 460 380)
+sz=(530 560 300); [[ ${swind} = TRUE ]] && sz=(450 460 300)
 
 f="$(gettext "Favorites<i><small><small> Podcasts</small></small></i>")"
 c="$(gettext "Videos<i><small><small> Podcasts</small></small></i>")"
@@ -319,7 +319,8 @@ function podmode() {
     --always-print-result \
     --window-icon=$DS/images/logo.png --image-on-top \
     --ellipsize=END --align=right --center \
-    --width=${sz[0]} --height=${sz[1]} --borders=5 --tab-borders=0 \
+    --width=${sz[0]} --height=${sz[1]} \
+    --borders=5 --tab-borders=0 \
     --tab=" $(gettext "Episodes") " \
     --tab=" $(gettext "Favorites") " \
     --tab=" $(gettext "Manage") " \

@@ -298,14 +298,7 @@ function podmode() {
     --ellipsize=end --wrap-width=${sz[2]} --ellipsize-cols=1 \
     --column=Name:IMG \
     --column=Name:TXT &
-    _list_2 | yad --list --tabnum=2 \
-    --plug=$KEY --print-all \
-    --dclick-action="$DSP/cnfg.sh viewer" \
-    --no-headers --expand-column=2 \
-    --ellipsize=end --wrap-width=${sz[2]} --ellipsize-cols=1 \
-    --column=Name:IMG \
-    --column=Name:TXT &
-    yad --form --tabnum=3 \
+    yad --form --tabnum=2 \
     --plug=$KEY \
     --borders=10 --columns=2 \
     --field="<small><b>$info</b></small>$infolabel":LBL " " \
@@ -322,7 +315,6 @@ function podmode() {
     --width=${sz[0]} --height=${sz[1]} \
     --borders=5 --tab-borders=0 \
     --tab=" $(gettext "Episodes") " \
-    --tab=" $(gettext "Favorites") " \
     --tab=" $(gettext "Manage") " \
     --button="$(gettext "Play")":"$DS/play.sh play_list" \
     --button="$(gettext "Update")":2 \

@@ -20,6 +20,44 @@ extchk () {
     cleanups "$DT/export_audio" & exit 1
 }
 
+n=1
+while read -r _item; do
+    [ ! -d "$DT/export_audio" ] && break
+    unset cdid trgt ; get_item "${_item}"
+    
+    if [ -n "${trgt}" -a -n "${cdid}" ]; then
+    
+        echo -n "${trgt}" >> "${dire}/text"
+        
+        if [ "${type}" = 2 ]; then
+        
+            if [ -f "${DM_tlt}/$cdid.mp3" ]; then
+                sox "${DM_tlt}/$cdid.mp3" -r 44100 -C 128 "$dire/$n.mp3"
+                if [ $? != 0 ]; then extchk; fi
+            fi
+
+        elif [ "${type}" = 1 ]; then
+        
+            if [ -f "$DM_tls/audio/${trgt,,}.mp3" ]; then
+                sox "$DM_tls/audio/${trgt,,}.mp3" -r 44100 -C 128 "$dire/$n.mp3"
+                if [ $? != 0 ]; then extchk; fi
+                
+            elif [ -f "${DM_tlt}/$cdid.mp3" ]; then
+            
+                sox "${DM_tlt}/$cdid.mp3" -r 44100 -C 128 "$dire/$n.mp3"
+                if [ $? != 0 ]; then extchk; fi
+            fi
+        fi
+    fi
+    
+    let n++
+
+done < "${DC_tlt}/data"
+
+mp3wrap ./a/"0album.mp3" $(ls -v ./*.mp3)
+if [ $? != 0 ]; then extchk; fi
+rm ./*.mp3;
+
 n=1; a=1
 while read -r _item; do
     [ ! -d "$DT/export_audio" ] && break

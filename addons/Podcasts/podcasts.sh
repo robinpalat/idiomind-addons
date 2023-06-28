@@ -244,7 +244,7 @@ function dlg_subs() {
     --always-print-result --print-all --separator="|" \
     --window-icon=$DS/images/logo.png \
     --scroll --mouse \
-    --width=450 --height=340 --borders=8 \
+    --width=450 --height=380 --borders=8 \
     --field="$(gettext "Add URL of podcasts about languages")":LBL " " \
     --field="" "${url1}" --field="" "${url2}" --field="" "${url3}" \
     --field="" "${url4}" --field="" "${url5}" --field="" "${url6}" \
@@ -300,7 +300,7 @@ function podmode() {
     --column=Name:TXT &
     yad --form --tabnum=2 \
     --plug=$KEY \
-    --borders=10 --columns=2 \
+    --borders=35 --columns=2 \
     --field="<small><b>$info</b></small>$infolabel":LBL " " \
     --field=" ":LBL " " \
     --field=" ":LBL " " \
@@ -730,10 +730,10 @@ function update() {
 
     if [[ ${new_episodes} -gt 0 ]]; then
         if [[ ${new_episodes} -eq 1 ]]; then
-            notify-send -i idiomind "$(gettext "New content")" \
+            notify-send -i idiomind "$(gettext "Podcasts: New content available")" \
             "$(gettext "1 episode downloaded")" -t 8000
         elif [[ ${new_episodes} -gt 1 ]]; then
-            notify-send -i idiomind "$(gettext "New content")" \
+            notify-send -i idiomind "$(gettext "Podcasts: New content available")" \
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
         cleanups "$DC_a/Podcasts${tlng}_tsk"
@@ -752,7 +752,7 @@ function update() {
     else
         if [[ ${2} = 1 ]]; then
             notify-send -i idiomind \
-            "$(gettext "Update finished")" \
+            "$(gettext "Podcasts: Update finished")" \
             "$(gettext "Has not changed since last update")" -t 8000
         fi
     fi
@@ -808,6 +808,7 @@ class MainWin(Gtk.Window):
         Gtk.Window.__init__(self, title = channel, 
         skip_pager_hint=True, skip_taskbar_hint=True)
         self.set_size_request(int(_width), int(_height))
+        self.set_icon_from_file("/usr/share/idiomind/images/logo.png") 
         self.view = WebKit2.WebView()
         self.view.load_uri("file://" + uri)
         box = Gtk.Box()
@@ -1026,11 +1027,10 @@ function sync() {
  
 
 function tasks() {
-
-    if [[ "$2" = "$(gettext "Watch: Recent videos")"* ]]; then
+    if [[ "$2" = "$(gettext "Watch: Recent videos")" ]]; then
         "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh" "_video_"
-    elif [[ "$2" = "$(gettext "Listen: Recent audios")"* ]]; then
+    elif [[ "$2" = "$(gettext "Listen: Recent audios")" ]]; then
         "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
         "$DS/ifs/mods/chng/podcasts.sh" "_audio_"
     else

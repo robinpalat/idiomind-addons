@@ -9,7 +9,7 @@ Vcs-Browser: https://github.com/robinpalat/idiomind-addons
 Vcs-Git: https://github.com/robinpalat/idiomind-addons.git
 
 Package: idiomind-addons
-Architecture: any
+Architecture: all
 Depends: ${misc:Depends}, idiomind, rsync, xsltproc, eyed3, mp3splt, mp3wrap
 Enhances: idiomind
 Description: Idiomind addons

@@ -1,12 +1,13 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+altrau="" # alternative audio player
+
 source /usr/share/idiomind/default/c.conf
 file_cfg="${DM_tl}/Podcasts/.conf/podcasts.cfg"
 evideo="$(grep -oP '(?<=evideo=\").*(?=\")' "${file_cfg}")"
 eaudio="$(grep -oP '(?<=eaudio=\").*(?=\")' "${file_cfg}")"
 ekeep="$(grep -oP '(?<=ekeep=\").*(?=\")' "${file_cfg}")"
-altrau="" # alternative audio player
 altrvi="$(grep -oP '(?<=altrvi=\").*(?=\")' "${file_cfg}")"
 
 check_alt_player () {

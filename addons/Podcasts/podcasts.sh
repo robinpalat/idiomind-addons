@@ -361,7 +361,7 @@ function update() {
         if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
             echo "fixed=\"TRUE\"" > "$DC_a/Podcasts_tasks.cfg"
         fi
-        cleanups "$DCP/read.tsk" "$DCP/watch.tsk" "$DCP/listen.tsk"
+        
         if [ -e "$DCP/1.lst" ] && [[ $(wc -l < "$DCP/1.lst") \
         != $(wc -l < "$DCP/.1.lst") ]]; then
             cp "$DCP/.1.lst" "$DCP/1.lst"
@@ -737,12 +737,17 @@ function update() {
             "$(gettext "$new_episodes episodes downloaded")" -t 8000
         fi
         cleanups "$DC_a/Podcasts${tlng}_tsk"
+        
+        tail -n 10 "$DCP/watch.tsk" >  "$DCP/watch.tmp"
+        mv -f "$DCP/watch.tmp"  "$DCP/watch.tsk"
+        tail -n 10 "$DCP/listen.tsk" >  "$DCP/listen.tmp"
+        mv -f "$DCP/listen.tmp"  "$DCP/listen.tsk"
        
-        if [ ${ait} -gt 0 ]; then
+        if [ ${ait} -gt 0 ] && [ -s "$DCP/listen.tsk" ]; then
             lbltp="$(gettext "Listen: Recent audios")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
-        if [ ${vit} -gt 0 ]; then
+        if [ ${vit} -gt 0 ] && [ -s "$DCP/watch.tsk" ]; then
             lbltp="$(gettext "Watch: Recent videos")"
             echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
         fi
@@ -1027,15 +1032,17 @@ function sync() {
  
 
 function tasks() {
-    if [[ "$2" = "$(gettext "Watch: Recent videos")" ]]; then
-        "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
-        "$DS/ifs/mods/chng/podcasts.sh" "_video_"
-    elif [[ "$2" = "$(gettext "Listen: Recent audios")" ]]; then
-        "$DS/stop.sh" 2; echo "1" > "$DT/playlck"; sleep 1
-        "$DS/ifs/mods/chng/podcasts.sh" "_audio_"
-    else
-        export item
-        vwr
+	if [ -f "$DT/playlck" ] && [ "$(< "$DT/playlck")" = 0 ]; then
+		if [[ "$2" = "$(gettext "Watch: Recent videos")" ]]; then
+			"$DS/stop.sh" 2; echo "$2" > "$DT/playlck"
+			"$DS/ifs/mods/chng/podcasts.sh" "_video_"
+		elif [[ "$2" = "$(gettext "Listen: Recent audios")" ]]; then
+			"$DS/stop.sh" 2; echo "$2" > "$DT/playlck"
+			"$DS/ifs/mods/chng/podcasts.sh" "_audio_"
+		else
+			export item
+			vwr
+		fi
     fi
 } >/dev/null 2>&1
 

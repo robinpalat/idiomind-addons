@@ -1,6 +1,7 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+
 altrau="" # alternative audio player
 
 source /usr/share/idiomind/default/c.conf
@@ -82,31 +83,37 @@ audio_file() {
     fi
 }
 
-if [ "$1" = "_video_" ]; then
+if [ "$@" = "_video_" ]; then
+
     if [ -n "${altrvi}" ]; then
         check_alt_player "${altrvi}" &
         while read -r item; do
             video_file 0 "$item" >> "$DT/list.m3u"
         done < "$DPC/watch.tsk"
         sed -i '/^$/d' "$DT/list.m3u"
-        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-        echo "0" > "$DT/playlck"
-        ${altrvi} "$DT/list.m3u" &
+        if [ -s "$DT/list.m3u" ] && [ -f "$DT/list.m3u" ]; then
+			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+			echo "0" > "$DT/playlck"
+			cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrvi} "$DM_tl/Podcasts/.conf/list.m3u"
+		fi
     else
-        sleep 1
         while read -r item; do
             _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
         done < "$DPC/watch.tsk"
-        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-        mplayer -noconsolecontrols -name Idiomind \
-        -title "Idiomind (mplayer)" \
-        -playlist "$DT/list.m3u"; wait
+        
+        if [ -s "$DT/list.m3u" ] && [ -f "$DT/list.m3u" ]; then
+			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+			mplayer -noconsolecontrols -name Idiomind \
+			-title "Idiomind (mplayer)" \
+			-playlist "$DT/list.m3u"; wait
+        fi
     fi
     
     if [ -d $DT ]; then find $DT -maxdepth 1 \
     -type f -name '*.m3u' -exec rm -fr {} \;; fi
     
-    echo "1" > "$DT/playlck"
+    echo "0" > "$DT/playlck"
     exit 0
 
 elif [ "$1" = "_audio_" ]; then
@@ -115,8 +122,12 @@ elif [ "$1" = "_audio_" ]; then
         while read -r item; do
             audio_file 0 "$item" >> "$DT/list.m3u"
         done < "$DPC/listen.tsk"
-        echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-        ${altrau} "$DT/list.m3u" &
+        if [ -s "$DT/list.m3u" ]; then
+			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
+			cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrau} "$DM_tl/Podcasts/.conf/list.m3u"
+        fi
+        
     else
         sleep 1
         while read -r item; do get_itep
@@ -150,7 +161,8 @@ elif [ "$1" = "_favs_" ]; then
             done < "$DPC/2.lst"
             sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            ${altrau} "$DT/list.m3u" &
+            cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrau} "$DM_tl/Podcasts/.conf/list.m3u" &
         else
             sleep 1
             while read -r item; do
@@ -169,7 +181,8 @@ elif [ "$1" = "_favs_" ]; then
             done < "$DPC/2.lst"
             sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            ${altrvi} "$DT/list.m3u" &
+            cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrvi} "$DM_tl/Podcasts/.conf/list.m3u" &
         else
             sleep 1
             while read -r item; do
@@ -191,7 +204,6 @@ elif [ "$1" = "_favs_" ]; then
 fi
 
 
-
 if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; then
 
     if [ ${ekeep} = TRUE ]; then
@@ -211,7 +223,8 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 done < "$DPC/2.lst"
                 sed -i '/^$/d' "$DT/list.m3u"
                 echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-                ${altrau} "$DT/list.m3u"
+                cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+				${altrau} "$DM_tl/Podcasts/.conf/list.m3u" &
             else
                 sleep 1
                 while read -r item; do
@@ -229,7 +242,8 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 done < "$DPC/2.lst"
                 sed -i '/^$/d' "$DT/list.m3u"
                 echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-                ${altrvi} "$DT/list.m3u"
+                cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+				${altrvi} "$DM_tl/Podcasts/.conf/list.m3u" &
             else
                 sleep 1
                 while read -r item; do
@@ -253,6 +267,8 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
             done < "$DPC/1.lst"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             ${altrau} "$DT/list.m3u"
+            cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrau} "$DM_tl/Podcasts/.conf/list.m3u" &
         else
             sleep 1
             while read -r item; do get_itep
@@ -271,7 +287,8 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
             done < "$DPC/1.lst"
             sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
-            ${altrvi} "$DT/list.m3u"
+            cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
+			${altrvi} "$DM_tl/Podcasts/.conf/list.m3u" &
         else
             sleep 1
             while read -r item; do

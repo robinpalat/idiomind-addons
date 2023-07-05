@@ -89,7 +89,9 @@ if [ "$@" = "_video_" ]; then
         check_alt_player "${altrvi}" &
         while read -r item; do
             video_file 0 "$item" >> "$DT/list.m3u"
-        done < "$DPC/watch.tsk"
+        done <<<"$(tac "$DPC/watch.tsk")"
+        
+        
         sed -i '/^$/d' "$DT/list.m3u"
         if [ -s "$DT/list.m3u" ] && [ -f "$DT/list.m3u" ]; then
 			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
@@ -100,7 +102,7 @@ if [ "$@" = "_video_" ]; then
     else
         while read -r item; do
             _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
-        done < "$DPC/watch.tsk"
+        done <<<"$(tac "$DPC/watch.tsk")"
         
         if [ -s "$DT/list.m3u" ] && [ -f "$DT/list.m3u" ]; then
 			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
@@ -121,7 +123,7 @@ elif [ "$1" = "_audio_" ]; then
         check_alt_player "${altrau}" &
         while read -r item; do
             audio_file 0 "$item" >> "$DT/list.m3u"
-        done < "$DPC/listen.tsk"
+        done <<<"$(tac "$DPC/listen.tsk")"
         if [ -s "$DT/list.m3u" ]; then
 			echo "$(gettext "Podcast playlist")" > "$DT/playlck"
 			cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -134,7 +136,7 @@ elif [ "$1" = "_audio_" ]; then
             [ "$(< "$DT/playlck")" = 0 ] && break
             echo "${trgt}" > "$DT/playlck"
             _stop=1; play_itep; sleep 2
-        done < "$DPC/listen.tsk"
+        done <<<"$(tac "$DPC/listen.tsk")"
     fi
     
     if [ -d $DT ]; then find $DT -maxdepth 1 \
@@ -158,7 +160,7 @@ elif [ "$1" = "_favs_" ]; then
             check_alt_player "${altrau}" &
             while read -r item; do
                 audio_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/2.lst"
+            done <<<"$(tac "$DPC/2.lst")"
             sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -167,7 +169,7 @@ elif [ "$1" = "_favs_" ]; then
             sleep 1
             while read -r item; do
                 audio_file 1 "$item" >> "$DT/list.m3u"
-            done < "$DPC/2.lst"
+            done <<<"$(tac "$DPC/2.lst")"
             while read -r item; do get_itep
                 [ "$(< "$DT/playlck")" == 0 ] && break
                 echo "$trgt" > "$DT/playlck"
@@ -187,7 +189,7 @@ elif [ "$1" = "_favs_" ]; then
             sleep 1
             while read -r item; do
                 video_file 1 "$item" >> "$DT/list.m3u"
-            done < "$DPC/2.lst"
+            done <<<"$(tac "$DPC/2.lst")"
             while read -r item; do get_itep
                 [ "$(< "$DT/playlck")" == 0 ] && break
                 echo "$trgt" > "$DT/playlck"
@@ -220,7 +222,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 check_alt_player "${altrau}" &
                 while read -r item; do
                     audio_file 0 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
+                done <<<"$(tac "$DPC/2.lst")"
                 sed -i '/^$/d' "$DT/list.m3u"
                 echo "$(gettext "Podcast playlist")" > "$DT/playlck"
                 cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -229,7 +231,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 sleep 1
                 while read -r item; do
                     audio_file 1 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
+                done <<<"$(tac "$DPC/2.lst")"
                 while read -r item; do get_itep
                     echo "$trgt" > "$DT/playlck"
                     _stop=1; _play; sleep 2
@@ -239,7 +241,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 check_alt_player "${altrvi}" &
                 while read -r item; do
                     video_file 0 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
+                done <<<"$(tac "$DPC/2.lst")"
                 sed -i '/^$/d' "$DT/list.m3u"
                 echo "$(gettext "Podcast playlist")" > "$DT/playlck"
                 cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -248,7 +250,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
                 sleep 1
                 while read -r item; do
                     video_file 1 "$item" >> "$DT/list.m3u"
-                done < "$DPC/2.lst"
+                done <<<"$(tac "$DPC/2.lst")"
                 while read -r item; do get_itep
                     echo "$trgt" > "$DT/playlck"
                     _stop=1; _play; sleep 2
@@ -264,7 +266,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
             check_alt_player "${altrau}" &
             while read -r item; do
                 audio_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/1.lst"
+            done <<<"$(tac "$DPC/1.lst")"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             ${altrau} "$DT/list.m3u"
             cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -284,7 +286,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
             check_alt_player "${altrvi}" &
             while read -r item; do
                 video_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/1.lst"
+            done <<<"$(tac "$DPC/1.lst")"
             sed -i '/^$/d' "$DT/list.m3u"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             cp -f "$DT/list.m3u" "$DM_tl/Podcasts/.conf/list.m3u"
@@ -293,7 +295,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
             sleep 1
             while read -r item; do
                 _stop=1; video_file 0 "$item" >> "$DT/list.m3u"
-            done < "$DPC/1.lst"
+            done <<<"$(tac "$DPC/1.lst")"
             echo "$(gettext "Podcast playlist")" > "$DT/playlck"
             mplayer -noconsolecontrols -name Idiomind \
             -title "Idiomind (mplayer)" \

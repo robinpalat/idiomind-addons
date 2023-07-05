@@ -9,15 +9,15 @@ if [[ $1 = 'viewer' ]]; then
     export item="$3"
     ./podcasts.sh viewer & exit
 elif [[ $1 = 'optns' ]]; then
-    ./podcasts.sh dlg_optns & exit
+    ./podcasts.sh dlg_optns &
 elif [[ $1 = 'subs' ]]; then
-    ./podcasts.sh dlg_subs & exit
+    ./podcasts.sh dlg_subs &
 elif [[ $1 = 'remove_item' ]]; then
-    ./podcasts.sh remove_item & exit
+    ./podcasts.sh remove_item &
 elif [[ $1 = 'delete_all' ]]; then
-    ./podcasts.sh delete_all & exit
+    ./podcasts.sh delete_all &
 elif [[ $1 = 'tasks' ]]; then
-    ./podcasts.sh "$@" & exit
+    ./podcasts.sh "$@" &
 elif [[ $1 = 'stop' ]]; then
     if ps -A | pgrep -f "wget -q -c -T 51"; then 
         kill -9 $(pgrep -f "wget -q -c -T 51") &
@@ -25,7 +25,7 @@ elif [[ $1 = 'stop' ]]; then
     if ps -A | pgrep -f "podcasts.sh update"; then 
         kill -9 $(pgrep -f "podcasts.sh update") &
     fi
-    exit 0
+    
 else
     source "$DS/ifs/cmns.sh"
     f=0
@@ -50,5 +50,7 @@ else
         done
         "$DS/mngr.sh" mkmn 0
     fi
-    "$DS/ifs/tpc.sh" 'Podcasts' 11 & exit 0
+    "$DS/ifs/tpc.sh" 'Podcasts' 11 &
 fi
+
+exit 0

@@ -1032,6 +1032,7 @@ function sync() {
  
 
 function tasks() {
+	
 	if [ -f "$DT/playlck" ] && [ "$(< "$DT/playlck")" = 0 ]; then
 		if [[ "$2" = "$(gettext "Watch: Recent videos")" ]]; then
 			"$DS/stop.sh" 2; echo "$2" > "$DT/playlck"

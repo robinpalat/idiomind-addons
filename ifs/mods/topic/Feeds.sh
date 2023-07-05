@@ -7,6 +7,7 @@ source "$DS/ifs/cmns.sh"
 
 fetch_content() {
     export tpe="${2}"
+
     DC_tlt="$DM_tl/${tpe}/.conf"
     itemdir=$(base64 <<< $((RANDOM%100000)) | head -c 32)
     export DT_r="$DT/$itemdir"
@@ -21,14 +22,17 @@ fetch_content() {
         | grep -m1 "HTTP/1.1" >/dev/null 2>&1 && break ||sleep 10
         [ ${t} = 30 ] && exit 1
     done
+ 
     cat "${DC_tlt}/feeds" |while read -r _feed; do
         if [ -n "${_feed}" ]; then
+         
             wget -O "$DT/out.xml" "${_feed}"
             feed_items="$(xsltproc "$DS/default/tmpl.xml" "$DT/out.xml")"
             if [ -z "${feed_items}" ]; then internet; fi
             feed_items="$(echo "${feed_items}" |tr '\n' '*' |tr -s '[:space:]' |sed 's/EOL/\n/g' |head -n2)"
             feed_items="$(echo "${feed_items}" |sed '/^$/d')"
             while read -r item; do
+            
                 if [[ $(wc -l < "${DC_tlt}/data") -ge 200 ]]; then exit 1; fi
                 fields="$(echo "${item}" |sed -r 's|-\!-|\n|g')"
                 title=$(echo "${fields}" |sed -n 3p \
@@ -60,50 +64,8 @@ fetch_content() {
     return 0
 } >/dev/null 2>&1
 
-function edit_feeds_list() {
-    kill -9 $(pgrep -f "yad --list --title") &
-    yad --list --title="$(gettext "Feeds")" \
-    --text="<small>$(gettext "Configure feed urls to add content automatically.")</small>" \
-    --name=Idiomind --class=Idiomind \
-    --editable --separator='\n' \
-    --always-print-result --print-all \
-    --window-icon=idiomind \
-    --limit=3 --no-headers --center \
-    --width=520 --height=140 --borders=10 \
-    --column="" \
-    "$btnf" --button="$(gettext "Save")":0 \
-    --button="$(gettext "Cancel")":1
-    
-}
-
-edit_feeds() {
-    file="$DM_tl/${tpc}/.conf/feeds"
-    feeds="$(< "${file}")"
-    if [ -n "$feeds" ]; then 
-        btnf="--button="$(gettext "Fetch")":2"
-    else
-        btnf="--center"
-    fi
-    export btnf
-    mods="$(echo "${feeds}" |edit_feeds_list)"
-    ret="$?"
-    if [ $ret != 1 -a $ret -le 2 ]; then
-        if [ -z "${mods}" ]; then
-            cleanups "${file}" "$DM_tl/${tpc}/.conf/exclude"
-        elif [ "${feeds}" != "${mods}" ]; then
-            touch "$DM_tl/${tpc}/.conf/exclude"
-            echo "${mods}" |sed -e '/^$/d' > "${file}"
-        fi
-        if [ $ret = 2 ]; then
-            "$DS/ifs/mods/topic/Feeds.sh" fetch_content "${tpc}" 1 &
-        fi
-    fi
-} >/dev/null 2>&1
-
 
 case "$1" in
-    Feeds)
-    edit_feeds "$@" ;;
     fetch_content)
     fetch_content "$@" ;;
 esac

@@ -8,7 +8,7 @@ DC_a="$HOME/.config/idiomind/addons"
 
 function edit_feeds_list() {
     yad --list --title="$tpc" \
-    --text="<small>$(gettext "Add feed urls:")</small>" \
+    --text="<small>$(gettext "Add or remove feed urls:")</small>" \
     --name=Idiomind --class=Idiomind \
     --editable --separator='\n' \
     --always-print-result --print-all \
@@ -54,8 +54,8 @@ edit_feeds() {
 tpcs="$(cdb "${shrdb}" 5 topics)"
 tpcs="$(grep -vFx "${tpe}" <<< "$tpcs" |tr "\\n" '!' |sed 's/\!*$//g')"
 [ -n "$tpcs" ] && export e='!'
-name="$(gettext "Rss feeds content")"
-label="$(gettext "Automatically add content to your topics through feeds.")\n\n <small>$(gettext "Select topic to manage feeds:")</small>"
+name="$(gettext "Feeds")"
+label="$(gettext "Automatically add content to your topics through feeds.")\n\n <small>$(gettext "Select topic to manage:")</small>"
 
 c=$(yad --form --title="$name" \
 --name=Idiomind --class=Idiomind \
@@ -65,14 +65,17 @@ c=$(yad --form --title="$name" \
 --on-top --skip-taskbar \
 --width=400 --borders=12 \
 --always-print-result --editable --print-all \
---button="$(gettext "Apply")":0 \
+--button="$(gettext "Select")":0 \
 --button="$(gettext "Close")":1)
+
 ret=$?
 
         if [ ${ret} -eq 0 ]; then
-		tpc="$(cut -d "|" -f1 <<< "${c}")"
-        edit_feeds 
-
+			tpc="$(cut -d "|" -f1 <<< "${c}")"
+			if [ -z "$tpc" ];then exit 0
+			else
+				edit_feeds 
+			fi
         fi
 
 exit 0

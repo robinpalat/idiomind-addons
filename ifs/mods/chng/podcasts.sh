@@ -47,13 +47,13 @@ get_itep() {
     if [ -f "${item}" ]; then
         channel="$(grep -o channel=\"[^\"]* "${item}" |grep -o '[^"]*$')"
         title="$(grep -o title=\"[^\"]* "${item}" |grep -o '[^"]*$')"
-        if [ -e "$DMC/$fname.mp3" ]; then file="$DMC/$fname.mp3"; mime=1
-        elif [ -e "$DMC/$fname.ogg" ]; then file="$DMC/$fname.ogg"; mime=1
-        elif [ -e "$DMC/$fname.m4v" ]; then file="$DMC/$fname.m4v"; mime=2
-        elif [ -e "$DMC/$fname.m4a" ]; then file="$DMC/$fname.m4a"; mime=2
-        elif [ -e "$DMC/$fname.mp4" ]; then file="$DMC/$fname.mp4"; mime=2
-        elif [ -e "$DMC/$fname.avi" ]; then file="$DMC/$fname.avi"; mime=2; fi
-        if [ -e "${file}" ]; then
+        if [ -f "$DMC/$fname.mp3" ]; then file="$DMC/$fname.mp3"; mime=1
+        elif [ -f "$DMC/$fname.ogg" ]; then file="$DMC/$fname.ogg"; mime=1
+        elif [ -f "$DMC/$fname.m4v" ]; then file="$DMC/$fname.m4v"; mime=2
+        elif [ -f "$DMC/$fname.m4a" ]; then file="$DMC/$fname.m4a"; mime=1
+        elif [ -f "$DMC/$fname.mp4" ]; then file="$DMC/$fname.mp4"; mime=2
+        elif [ -f "$DMC/$fname.avi" ]; then file="$DMC/$fname.avi"; mime=2; fi
+        if [ -f "${file}" ]; then
             trgt="${title}"
             srce="$(gettext "By:") ${channel}"
             icon=idiomind
@@ -68,11 +68,11 @@ get_itep() {
 
 video_file() {
     fname=$(echo -n "${2}" |md5sum |rev |cut -c 4- |rev)
-    if [ -e "$DMC/$fname.m4v" ]; then
+    if [ -f "$DMC/$fname.m4v" ]; then
     [ $1 = 0 ] && echo "$DMC/$fname.m4v" || echo "$2"; fi
-    if [ -e "$DMC/$fname.mp4" ]; then
+    if [ -f "$DMC/$fname.mp4" ]; then
     [ $1 = 0 ] && echo "$DMC/$fname.mp4" || echo "$2"; fi
-    if [ -e "$DMC/$fname.m4a" ]; then
+    if [ -f "$DMC/$fname.m4a" ]; then
     [ $1 = 0 ] && echo "$DMC/$fname.m4a" || echo "$2"; fi
 }
 
@@ -90,7 +90,6 @@ if [ "$@" = "_video_" ]; then
         while read -r item; do
             video_file 0 "$item" >> "$DT/list.m3u"
         done <<<"$(tac "$DPC/watch.tsk")"
-        
         
         sed -i '/^$/d' "$DT/list.m3u"
         if [ -s "$DT/list.m3u" ] && [ -f "$DT/list.m3u" ]; then
@@ -273,7 +272,7 @@ if [[ ${evideo} = TRUE ]] || [[ ${eaudio} = TRUE ]] || [[ ${ekeep} = TRUE ]]; th
 			${altrau} "$DM_tl/Podcasts/.conf/list.m3u" &
         else
             sleep 1
-            while read -r item; do get_itep
+            while read -r item; do get_itep # play audio from play panel
                 echo "${trgt}" > "$DT/playlck"
                 _stop=1; _play; sleep 2
             done < "$DPC/1.lst"

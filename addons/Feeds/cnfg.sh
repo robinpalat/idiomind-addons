@@ -18,7 +18,6 @@ function edit_feeds_list() {
     --column="" \
     "$btnf" --button="$(gettext "Save")":0 \
     --button="$(gettext "Cancel")":1
-    
 }
 
 edit_feeds() {
@@ -46,10 +45,6 @@ edit_feeds() {
         fi
     fi
 } >/dev/null 2>&1
-
-
-
-
 
 tpcs="$(cdb "${shrdb}" 5 topics)"
 tpcs="$(grep -vFx "${tpe}" <<< "$tpcs" |tr "\\n" '!' |sed 's/\!*$//g')"

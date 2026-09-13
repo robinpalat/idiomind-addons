@@ -23,55 +23,76 @@ function addwords() {
         export errfilew="${DM_tl}/${name}/.conf/note.err"
         export lblerr=$(gettext "Maximum number of notes has been exceeded:")
 
-        python <<PY
-import os, re, sqlite3, sys
-logfile = os.environ['logfile']
-errfilew = os.environ['errfilew']
-lblerr = os.environ['lblerr']
-datafilea = os.environ['datafilea']
-datafileb = os.environ['datafileb']
-datafilew = open(datafileb, "a")
-indexfile = os.environ['indexfile']
-indexfile = open(indexfile, "a")
-tpcdb = os.environ['tpcdb']
-db = sqlite3.connect(tpcdb)
-db.text_factory = str
-cur = db.cursor()
-words = db.execute("select list from words")
-words = words.fetchall()
-wcount = len(words)
-loglist = [line.strip() for line in open(logfile)]
-for red in loglist:
-    with open(datafilea,'r') as f:
-        itema = [line for line in f if 'trgt{'+red+'}' in line]
-    with open(datafileb,'r') as f:
-        itemb = [line for line in f if 'trgt{'+red+'}' in line]
-    if not itemb:
-        if wcount < 201:
-            item = itema[0].replace('}', '}\n')
-            fields = re.split('\n',item)
-            trgt = (fields[0].split('trgt{'))[1].split('}')[0]
-            srce = (fields[1].split('srce{'))[1].split('}')[0]
-            cur.execute("insert into words (list) values (?)", (trgt,))
-            cur.execute("insert into learning (list) values (?)", (trgt,))
-            indexfile.write("<span color='#AE3259'>"+trgt+"</span>\nFALSE\n"+srce+"\n")
-            datafilew.write(itema[0]+"\n")
-        else:
-            with open(errfilew, "a") as f:
-                f.write(lblerr+"\n"+red+"\n\n")
-        wcount += 1
-db.commit()
-db.close()
-indexfile.close()
-datafilew.close()
-PY
+        {
+            printf 'BEGIN TRANSACTION;\n'
+
+            wcount="$(sqlite3 "$tpcdb" "SELECT COUNT(*) FROM words;")"
+
+            while IFS= read -r red || [ -n "$red" ]; do
+
+                red="$(printf '%s' "$red" |
+                    sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+                [ -n "$red" ] || continue
+
+                # Buscar la nota correspondiente en el tópico actual.
+                itema="$(grep -F -m 1 "trgt{$red}" "$datafilea" || true)"
+
+                [ -n "$itema" ] || continue
+
+                # Comprobar si ya existe en el tópico destino.
+                itemb="$(grep -F -m 1 "trgt{$red}" "$datafileb" || true)"
+
+                [ -n "$itemb" ] && continue
+
+                if [ "$wcount" -lt 201 ]; then
+
+                    # Extraer trgt y srce.
+                    trgt="$(sed -n 's/.*trgt{\([^}]*\)}.*/\1/p' <<< "$itema")"
+                    srce="$(sed -n 's/.*srce{\([^}]*\)}.*/\1/p' <<< "$itema")"
+
+                    [ -n "$trgt" ] || continue
+
+                    # Escapar para SQLite.
+                    trgt_sql="${trgt//\'/\'\'}"
+
+                    printf "INSERT INTO words (list) VALUES ('%s');\n" \
+                        "$trgt_sql"
+
+                    printf "INSERT INTO learning (list) VALUES ('%s');\n" \
+                        "$trgt_sql"
+
+                    # Mantener exactamente el formato del index original.
+                    printf "<span color='#AE3259'>%s</span>\nFALSE\n%s\n" \
+                        "$trgt" "$srce" >> "$indexfile"
+
+                    # Equivalente a datafilew.write(itema[0] + "\n")
+                    printf '%s\n' "$itema" >> "$datafilew"
+
+                    wcount=$((wcount + 1))
+
+                else
+
+                    printf '%s\n%s\n\n' "$lblerr" "$red" >> "$errfilew"
+
+                    wcount=$((wcount + 1))
+
+                fi
+
+            done < "$logfile"
+
+            printf 'COMMIT;\n'
+
+        } | sqlite3 -bail "$tpcdb"
 
     touch "${DM_tl}/${name}"
     fi
 }
 
-( if [[ ${stts} -ge ${stts_d} ]] && [[ "${pr}" != e ]] && [[ "${act}" = TRUE ]]; then
-    if [[ "${hard}" -gt 0 ]]; then
+
+
+( if [[ "$active_practice" != e ]] && [[ "$act" = TRUE ]]; then
+    if [[ "$count_hard" -gt 0 ]]; then
         sleep 1; addwords
     fi
 fi ) &

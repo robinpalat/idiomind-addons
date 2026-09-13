@@ -31,8 +31,8 @@ c=$(yad --form --title="$(gettext "Hard words")" \
 ret=$?
 
 if [ $ret = 0 ]; then
-    echo -e "act=\"$(cut -d "|" -f1 <<< "$c")\"\n\
-    name=\"$(cut -d "|" -f2 <<< "$c")\"" > "$fileconf"
+    echo -e "act=\"$(cut -d "|" -f1 <<< "$c")\"\n
+name=\"$(cut -d "|" -f2 <<< "$c")\"" > "$fileconf"
 fi
 
 exit 0

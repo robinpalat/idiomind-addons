@@ -42,7 +42,15 @@ fetch_content() {
                 export link="$(echo "${fields}" |sed -n 4p \
                 |sed 's|/|\\/|g' |sed 's/\&/\&amp\;/g')"
                 if [ -n "${title}" ]; then
-                    if ! grep -Fo "trgt{${title^}}" "${DC_tlt}/data" >/dev/null 2>&1 && \
+                    # Feed titles are normalized by add.sh before storage, so
+                    # the link is the stable identity for duplicate detection.
+                    feed_exists=FALSE
+                    if [ -n "${link}" ] && grep -Fq "link{${link}}" "${DC_tlt}/data"; then
+                        feed_exists=TRUE
+                    elif grep -Fo "trgt{${title^}}" "${DC_tlt}/data" >/dev/null 2>&1; then
+                        feed_exists=TRUE
+                    fi
+                    if [[ ${feed_exists} = FALSE ]] && \
                     ! grep -Fxq "${title^}" "${DC_tlt}/exclude" >/dev/null 2>&1; then
                         export trans='TRUE'
                         export trgt="${title^}"
@@ -69,6 +77,5 @@ case "$1" in
     fetch_content)
     fetch_content "$@" ;;
 esac
-
 
 

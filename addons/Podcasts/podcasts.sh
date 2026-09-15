@@ -724,7 +724,7 @@ function vwr() {
     fi
     	export uri channel _height _width
 
-/usr/lib/idiomind/idiomind-htmlview \
+/usr/lib/idiomind/idiomind-utils html \
     "$uri" \
     "$channel" \
     "$_width" \

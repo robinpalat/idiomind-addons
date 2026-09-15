@@ -1,11 +1,69 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
-
+# Feeds.sh
 
 source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
 
+
+create_from_feed() {
+
+
+    feed_url="${1}"
+
+    # Verificar conexión
+    internet
+
+    # Descargar el recurso
+    itemdir=$(base64 <<< $((RANDOM%100000)) | head -c 32)
+    DT_f="$DT/$itemdir"
+    check_dir "$DT_f"
+
+if ! wget -q -O "$DT_f/feed.xml" "$feed_url"; then
+    cleanups "$DT_f"
+    msg "$(gettext "Feed not found.")\n" \
+        dialog-information "$(gettext "Information")"
+    return 1
+fi
+
+	feed_info="$(xsltproc "$DS/default/ch.xml" "$DT_f/feed.xml" 2>/dev/null)"
+
+	feed_title="${feed_info%%-!-*}"
+
+
+    if [ -z "$feed_title" ]; then
+        cleanups "$DT_f"
+        msg "$(gettext "Feed not found.")\n" \
+            dialog-information "$(gettext "Information")"
+        return 1
+    fi
+
+    # Mostrar el nombre encontrado y pedir confirmación.
+    msg "$(gettext "Feed found:")\n\n${feed_title}\n\n$(gettext "Do you want to create this topic?")" \
+        dialog-question "$(gettext "Add feed")"
+
+    if [ $? -ne 0 ]; then
+        cleanups "$DT_f"
+        return 1
+    fi
+
+    # Crear el topic usando el mecanismo normal de add.sh.
+    "$DS/add.sh" new_topic 1 1 "$feed_title"
+
+    # Si la creación tuvo éxito, configurar el feed.
+    if [ -d "$DM_tl/$feed_title/.conf" ]; then
+        printf '%s\n' "$feed_url" > "$DM_tl/$feed_title/.conf/feeds"
+
+        # Primer fetch.
+        fetch_content fetch_content "$feed_title" 1
+    fi
+
+    cleanups "$DT_f"
+}
+
+
 fetch_content() {
+
     export tpe="${2}"
 
     DC_tlt="$DM_tl/${tpe}/.conf"
@@ -55,6 +113,7 @@ fetch_content() {
                         export trans='TRUE'
                         export trgt="${title^}"
                         export tpe
+                    
                         echo "${trgt}" >> "$DT/updating_feeds"
                         "$DS/add.sh" new_item "${tpe}"
                     fi
@@ -73,9 +132,32 @@ fetch_content() {
 } >/dev/null 2>&1
 
 
+function tasks() {
+	
+	"$DS/ifs/mods/start/update_feeds.sh"
+	 
+} >/dev/null 2>&1
+
+
+
 case "$1" in
+
+    tasks)
+        tasks "$@"
+        ;;
+
     fetch_content)
-    fetch_content "$@" ;;
+        case "$3" in
+            1)
+                create_from_feed "$2"
+                ;;
+            2)
+                fetch_content "$@"
+                ;;
+            *)
+                fetch_content "$@"
+                ;;
+        esac
+        ;;
+
 esac
-
-

@@ -3,8 +3,8 @@
 
 source "$DS/ifs/cmns.sh"
 [ ! -e "$DC_a/gtts.cfg" ] && touch "$DC_a/gtts.cfg"
-char_ini="$(grep -o ini=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')"
-apikeygo="$(grep -o key=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')"
+char_ini="$(sed -n 's/.*ini="\([^"]*\).*/\1/p' "$DC_a/gtts.cfg")"
+apikeygo="$(sed -n 's/.*key="\([^"]*\).*/\1/p' "$DC_a/gtts.cfg")"
 _testflac="$DS/addons/Speech to text/test.flac"
 
 function dlg_progress_2() {

@@ -9,9 +9,6 @@ named="$(gettext "Hard words")"
 label="<small>$(gettext "Collects difficult words from the second review onwards.")</small>\n"
 
 [ ! -f "$fileconf" ] && touch "$fileconf"
-if [[ -z "$(< "$fileconf")" ]]; then
-    echo -e "act=\"\"\nname=\"${named}\"" > "$fileconf"
-fi
 
 act=$(grep -o act=\"[^\"]* "$fileconf" |grep -o '[^"]*$')
 name=$(grep -o name=\"[^\"]* "$fileconf" |grep -o '[^"]*$')
@@ -31,8 +28,7 @@ c=$(yad --form --title="$(gettext "Hard words")" \
 ret=$?
 
 if [ $ret = 0 ]; then
-    echo -e "act=\"$(cut -d "|" -f1 <<< "$c")\"\n
-name=\"$(cut -d "|" -f2 <<< "$c")\"" > "$fileconf"
+    echo -e "act=\"$(cut -d "|" -f1 <<< "$c")\"" > "$fileconf"
 fi
 
 exit 0

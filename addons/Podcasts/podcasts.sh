@@ -362,9 +362,9 @@ function update() {
         != $(wc -l < "$DCP/.2.lst") ]]; then
             cp "$DCP/.2.lst" "$DCP/2.lst"
         fi
-        if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
-            echo "fixed=\"TRUE\"" > "$DC_a/Podcasts_tasks.cfg"
-        fi
+        #if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
+            #echo "fixed=\"TRUE\"" > "$DC_a/Podcasts_tasks.cfg"
+        #fi
         
         if [ -e "$DCP/1.lst" ] && [[ $(wc -l < "$DCP/1.lst") \
         != $(wc -l < "$DCP/.1.lst") ]]; then

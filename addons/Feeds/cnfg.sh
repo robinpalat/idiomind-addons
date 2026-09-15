@@ -1,76 +1,42 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
-[ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
-source "$DS/ifs/cmns.sh"
-DC_a="$HOME/.config/idiomind/addons"
+if [[ $1 = 'tasks' ]]; then
+
+	"$DS/ifs/mods/start/update_feeds.sh" 'UPDT'
+
+else
+	DC_a="$HOME/.config/idiomind/addons"
+	fileconf="$DC_a/feeds.cfg"
+	name="Feeds"
+
+	[ ! -f "$fileconf" ] && touch "$fileconf"
 
 
-function edit_feeds_list() {
-    yad --list --title="$tpc" \
-    --text="<small>$(gettext "Add or remove feed urls:")</small>" \
-    --name=Idiomind --class=Idiomind \
-    --editable --separator='\n' \
-    --always-print-result --print-all \
-    --window-icon=idiomind \
-    --limit=3 --no-headers --center \
-    --width=520 --height=140 --borders=10 \
-    --column="" \
-    "$btnf" --button="$(gettext "Save")":0 \
-    --button="$(gettext "Cancel")":1
-}
+label="<b>$(gettext "Feeds")</b>\n\n\
+$(gettext "Feeds makes it possible to automatically add content to a topic based on updates from a feed.")\n\n\
+<b>$(gettext "How does it work?")</b>\n\n\
+$(gettext "When creating a topic, instead of entering its name, simply enter the exact URL of the feed. Idiomind will automatically find the channel name, create the topic with that name, and configure it to receive content from that URL.")\n\n\
+$(gettext "From that moment on, Feeds will check for updates and automatically add new content to the topic.")\n"
 
-edit_feeds() {
-    file="$DM_tl/${tpc}/.conf/feeds"
-    feeds="$(< "${file}")"
-    if [ -n "$feeds" ]; then 
-        btnf="--button="$(gettext "Update")":2"
-    else
-        btnf="--center"
-    fi
-    export btnf
-    mods="$(echo "${feeds}" |edit_feeds_list)"
-    ret="$?"
-    if [ $ret != 1 -a $ret -le 2 ]; then
-        if [ -z "${mods}" ]; then
-            cleanups "${file}" "$DM_tl/${tpc}/.conf/exclude"
-        elif [ "${feeds}" != "${mods}" ]; then
-            touch "$DM_tl/${tpc}/.conf/exclude"
-            echo "${mods}" |sed -e '/^$/d' > "${file}"
-            "$DS/ifs/mods/topic/Feeds.sh" fetch_content "${tpc}" 1 &
-        fi
-        if [ $ret = 2 ]; then
-        
-            "$DS/ifs/mods/topic/Feeds.sh" fetch_content "${tpc}" 1 &
-        fi
-    fi
-} >/dev/null 2>&1
 
-tpcs="$(cdb "${shrdb}" 5 topics)"
-tpcs="$(grep -vFx "${tpe}" <<< "$tpcs" |tr "\\n" '!' |sed 's/\!*$//g')"
-[ -n "$tpcs" ] && export e='!'
-name="$(gettext "Feeds")"
-label="$(gettext "Automatically add content to your topics through feeds.")\n\n <small>$(gettext "Select topic to manage:")</small>"
+	act=$(grep -o update=\"[^\"]* "$fileconf" |grep -o '[^"]*$')
 
-c=$(yad --form --title="$name" \
---name=Idiomind --class=Idiomind \
---text="\n$label" \
---field=""":CB" "!$tpe$e$tpcs" \
---window-icon=idiomind --align=right --center \
---on-top --skip-taskbar \
---width=400 --borders=12 \
---always-print-result --editable --print-all \
---button="$(gettext "Select")":0 \
---button="$(gettext "Close")":1)
+	c=$(yad --form --title="$(gettext "$name")" \
+	--name=Idiomind --class=Idiomind \
+	--text="$label" \
+	--window-icon=idiomind --align=right --center \
+	--on-top --skip-taskbar \
+	--width=400 --height=150 --borders=12 \
+	--always-print-result --editable --print-all \
+	--field="$(gettext "Automatically update feeds at startup")":chk "$act" \
+	--button="$(gettext "Save")!gtk-apply":0 \
+	--button="$(gettext "Close")":1)
+	ret=$?
 
-ret=$?
+if [ $ret = 0 ]; then
+    echo -e "update=\"$(cut -d "|" -f1 <<< "$c")\"" > "$fileconf"
+fi
 
-        if [ ${ret} -eq 0 ]; then
-			tpc="$(cut -d "|" -f1 <<< "${c}")"
-			if [ -z "$tpc" ];then exit 0
-			else
-				edit_feeds 
-			fi
-        fi
-
-exit 0
+	exit 0
+fi

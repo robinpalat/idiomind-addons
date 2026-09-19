@@ -4,6 +4,11 @@ source /usr/share/idiomind/default/c.conf
 DCF="$DM_tl/Feeds/.conf"
 update="$(grep -o 'update="[^"]*' "$DC_a/feeds.cfg" | grep -o '[^"]*$')"
 
+
+if [ -f "$DC_a/Feeds${tlng}_tsk" ]; then
+	rm -f "$DC_a/Feeds${tlng}_tsk"
+fi
+
 if [[ "$update" = TRUE || "$1" == 'UPDT' ]]; then
 
 

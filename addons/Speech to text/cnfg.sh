@@ -3,35 +3,97 @@
 
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
-link='https://console.developers.google.com'
+
 DC_a="$HOME/.config/idiomind/addons"
+CFG="$DC_a/speech_to_text.cfg"
+mkdir -p "$DC_a"
 
 name="$(gettext "Speech to text")"
-label="$(gettext "This script makes use of Google's speech recognition engine in order to try recognize speech from MP3 audio files.\nYou can invoke this function by entering a single character into the text box from dialog New note.")"
+label="$(gettext "Configure the speech recognition provider used by Idiomind.")"
 
-if [ ! -f "$DC_a/gtts.cfg" ] || [[ -z "$(< "$DC_a/gtts.cfg")" ]]; then
-echo -e "ini=\"a\"\nkey=\"\"" > "$DC_a/gtts.cfg"; fi
-ini=$(grep -o ini=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
-key=$(grep -o key=\"[^\"]* "$DC_a/gtts.cfg" |grep -o '[^"]*$')
-c=$(yad --form --title="$(gettext "Speech to text")" \
---name=Idiomind --class=Idiomind \
---text="<b>$name</b>\n<small>$label</small>" \
---window-icon=idiomind --align=right --center \
---on-top --skip-taskbar --expand-column=3 \
---width=450 --height=250 --borders=15 \
---always-print-result --editable --print-all \
---field="\t$(gettext "Use this character to invoke:")" "$ini" \
---field="Key" "$key" \
---field="<small>For this feature you need to provide a key. Please get one from: <a href='$link'>wwww.console.developers.google.com</a></small>\n":lbl " " \
---button="$(gettext "Save")!gtk-apply":0 \
---button="$(gettext "Close")":1)
+# Migrate the old Google configuration if it exists.
+if [ ! -f "$CFG" ]; then
+    old="$DC_a/gtts.cfg"
+    old_ini=""
+    old_key=""
+
+    if [ -f "$old" ]; then
+        old_ini="$(sed -n 's/.*ini="\([^"]*\).*/\1/p' "$old")"
+        old_key="$(sed -n 's/.*key="\([^"]*\).*/\1/p' "$old")"
+    fi
+
+    cat > "$CFG" <<EOF
+provider="google"
+ini="${old_ini:-a}"
+openai_api_key=""
+openai_model="gpt-4o-mini-transcribe"
+google_project=""
+google_location="us"
+google_model="chirp_3"
+EOF
+fi
+
+cfg() {
+    sed -n "s/^[[:space:]]*$1=\"\([^\"]*\)\"/\1/p" "$CFG" | head -n1
+}
+
+provider="$(cfg provider)"
+ini="$(cfg ini)"
+openai_api_key="$(cfg openai_api_key)"
+openai_model="$(cfg openai_model)"
+google_project="$(cfg google_project)"
+google_location="$(cfg google_location)"
+google_model="$(cfg google_model)"
+
+: "${provider:=openai}"
+: "${ini:=a}"
+: "${openai_model:=gpt-4o-mini-transcribe}"
+: "${google_location:=us}"
+: "${google_model:=chirp_3}"
+
+c="$(
+    yad --form \
+    --title="$name" \
+    --name=Idiomind --class=Idiomind \
+    --text="<b>$name</b>\n<small>$label</small>\n\n<small>$(gettext "You only need to configure one provider. If several providers are configured, only the selected provider will be used.")</small>" \
+    --window-icon=idiomind --align=right --center \
+    --on-top --skip-taskbar --expand-column=3 \
+    --width=560 --height=500 --borders=15 \
+    --always-print-result --editable --print-all \
+    --field="<b>$(gettext "Provider")</b>:LBL" "" \
+    --field="Provider:CB" "$provider!openai!google" \
+    --field="<b>$(gettext "Invocation")</b>:LBL" "" \
+    --field="$(gettext "Use this character to invoke:")" "$ini" \
+    --field="\n:LBL" "" \
+    --field="<b>OpenAI</b>:LBL" "" \
+    --field="OpenAI API Key:H" "$openai_api_key" \
+    --field="OpenAI Model:CB" "$openai_model!gpt-4o-mini-transcribe!gpt-4o-transcribe" \
+    --field="<b>Google Cloud</b>:LBL" "" \
+    --field="Google Cloud Project ID" "$google_project" \
+    --field="Google Location:CB" "$google_location!us!eu" \
+    --field="Google Model:CB" "$google_model!chirp_3!chirp_2!long" \
+    --field="<small>OpenAI: https://platform.openai.com/api-keys\nGoogle Cloud: authenticate with gcloud.</small>\n\n:LBL" "" \
+    --button="$(gettext "Save")!gtk-apply":0 \
+    --button="$(gettext "Close")":1
+)"
 ret=$?
 
 if [[ $ret = 0 ]]; then
-val1="$(cut -d "|" -f1 <<<"$c")"
-val2="$(cut -d "|" -f2 <<<"$c")"
-sed -i "s/ini=.*/ini=\"$val1\"/g" "$DC_a/gtts.cfg"
-sed -i "s/key=.*/key=\"$val2\"/g" "$DC_a/gtts.cfg"
+    # YAD includes :LBL fields in the printed result. Extract only
+    # the actual form controls, preserving their order.
+    IFS='|' read -r provider _label1 ini _label2 openai_api_key openai_model \
+        _label3 google_project google_location google_model _label4 <<< "$c"
+
+    cat > "$CFG" <<EOF
+provider="$provider"
+ini="$ini"
+" "
+openai_api_key="$openai_api_key"
+openai_model="$openai_model"
+google_project="$google_project"
+google_location="$google_location"
+google_model="$google_model"
+EOF
 fi
 
 exit 0

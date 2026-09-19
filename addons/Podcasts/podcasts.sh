@@ -362,6 +362,7 @@ function update() {
         != $(wc -l < "$DCP/.2.lst") ]]; then
             cp "$DCP/.2.lst" "$DCP/2.lst"
         fi
+        
         #if [ ! -f "$DC_a/Podcasts_tasks.cfg" ]; then
             #echo "fixed=\"TRUE\"" > "$DC_a/Podcasts_tasks.cfg"
         #fi
@@ -632,27 +633,35 @@ function update() {
         rm "$DT/nmfile"
     }
 
-    conditions ${2}
-    if [[ ${2} = 1 ]]; then echo "Podcasts" > "$DC_s/tpa"; fi
-    rm "$DM_tl/Podcasts"/*.updt
-    > "$updt"
-    echo -e "$(gettext "Latest downloads:") 0" \
-    |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
-    fetch_podcasts
+	conditions "${2:-}"
+	if [[ "${2:-}" = 1 ]]; then echo "Podcasts" > "$DC_s/tpa"; fi
 
-    kept_episodes=0
-    [ -e "$DCP/2.lst" ] && kept_episodes=$(wc -l < "$DCP/2.lst")
-    new_episodes=0
-    [ -e "$DT_r/log" ] && new_episodes=$(wc -l < "$DT_r/log")
-    export new_episodes
+	rm -f "$DM_tl/Podcasts"/*.updt 2>/dev/null
+	> "$updt"
 
-    cleanups "$updt" "$DT/out.xml"
-    find "$DT_r" -maxdepth 1 -type d -name '*.dl_poddir' -exec rm -fr {} \;
-    find "$DM_tl/Podcasts" -maxdepth 1 -type f -name '*.updt' -delete
+	printf '%s 0' "$(gettext "Latest downloads:")" \
+		| sed -e 's/^[ \t]*//' > "$DM_tl/Podcasts/$date.updt"
 
-    echo -e "$(gettext "Updated:") $(date "+%r %a %d %B")
-    \r$(gettext "Latest downloads:") $new_episodes" \
-    |sed -e 's/^[ \t]*//' |tr -d '\n' > "$DM_tl/Podcasts/$date.updt"
+	fetch_podcasts
+
+	local kept_episodes=0
+	[ -e "$DCP/2.lst" ] && kept_episodes=$(wc -l < "$DCP/2.lst")
+	local new_episodes=0
+	[ -e "$DT_r/log" ] && new_episodes=$(wc -l < "$DT_r/log")
+	export new_episodes
+
+	cleanups "$updt" "$DT/out.xml"
+
+	find "$DT_r" -maxdepth 1 -type d -name '*.dl_poddir' -exec rm -fr {} +
+
+
+	find "$DM_tl/Podcasts" -maxdepth 1 -type f -name '*.updt' \
+		! -name "$date.updt" -delete
+
+	printf '%s %s\r%s %s' \
+		"$(gettext "Updated:")" "$(date "+%r %a %d %B")" \
+		"$(gettext "Latest downloads:")" "$new_episodes" \
+		> "$DM_tl/Podcasts/$date.updt"
 
     if [[ ${new_episodes} -gt 0 ]]; then
         if [[ ${new_episodes} -eq 1 ]]; then
@@ -664,19 +673,31 @@ function update() {
         fi
         cleanups "$DC_a/Podcasts${tlng}_tsk"
         
-        tail -n 10 "$DCP/watch.tsk" >  "$DCP/watch.tmp"
-        mv -f "$DCP/watch.tmp"  "$DCP/watch.tsk"
-        tail -n 10 "$DCP/listen.tsk" >  "$DCP/listen.tmp"
-        mv -f "$DCP/listen.tmp"  "$DCP/listen.tsk"
-       
-        if [ ${ait} -gt 0 ] && [ -s "$DCP/listen.tsk" ]; then
-            lbltp="$(gettext "Listen: Recent episodes")"
-            echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
-        fi
-        if [ ${vit} -gt 0 ] && [ -s "$DCP/watch.tsk" ]; then
-            lbltp="$(gettext "Watch: Recent video episodes")"
-            echo -e "${lbltp}" >> "$DC_a/Podcasts${tlng}_tsk"
-        fi
+		truncate_last_lines() {
+			local file="$1" n="$2" tmp
+			tmp=$(mktemp "${file}.XXXXXX") || return 1
+			if tail -n "$n" "$file" > "$tmp"; then
+				mv -f "$tmp" "$file"
+			else
+				rm -f "$tmp"
+				echo "Error truncando $file" >&2
+				return 1
+			fi
+		}
+
+		: "${DCP:?DCP no está definido}"
+		truncate_last_lines "$DCP/watch.tsk" 10
+		truncate_last_lines "$DCP/listen.tsk" 10
+		
+		add_section() {
+			local flag="$1" file="$2" text="$3"
+			if [ "${flag:-0}" -gt 0 ] && [ -s "$file" ]; then
+				printf '%s\n' "$text" >> "$DC_a/Podcasts${tlng}_tsk"
+			fi
+		}
+
+		add_section "$ait" "$DCP/listen.tsk" "$(gettext "Listen: Recent episodes")"
+		add_section "$vit" "$DCP/watch.tsk" "$(gettext "Watch: Recent video episodes")"
  
         idiomind tasks
         removes
@@ -851,92 +872,6 @@ function set_channel() {
     exit 1
 }
 
-function sync() {
-    cfg="$DM_tl/Podcasts/.conf/podcasts.cfg"
-    path="$(grep -o 'path="[^"]*' "$cfg" |grep -o '[^"]*$')"
-    synf="$(grep -o 'synf="[^"]*' "$cfg" |grep -o '[^"]*$')"
-    
-    if [ -f "$DT/l_sync" ] && [[ ${2} -ge 1 ]]; then
-        msg_4 "$(gettext "A process is already running!")" \
-        "$DS/images/warning.png" "OK" "$(gettext "Stop")" "$(gettext "Syncing...")"
-        e=$?
-        if [ $e -eq 1 ]; then
-            killall rsync
-            if ps -A | pgrep -f "rsync"; then killall rsync; fi
-            cleanups "$DT/l_sync" "$DT/cp.lock"
-            killall podcasts.sh
-            exit 1
-        fi
-    elif [ -e "$DT/l_sync" ] && [[ ${2} = 0 ]]; then
-        exit 1
-    elif [ ! -d "$path" ] && [[ ${2} -ge 1 ]]; then
-        msg " $(gettext "The directory to synchronization does not exist.")\n" \
-        dialog-warning "$(gettext "Warning")"
-        cleanups "$DT/l_sync"; exit 1
-        
-        elif  [ ! -d "$path" ] && [[ ${2} = 0 ]]; then
-        echo "Synchronization error. Missing path" >> "$DM_tl/Podcasts/.conf/feed.err"
-        cleanups "$DT/l_sync"; exit 1
-    elif [ -d "${path}" ]; then
-        touch "$DT/l_sync"; SYNCDIR="${path}/"
-        if [ ${synf} = TRUE ]; then
-            > "$DT/rsync_list"
-            while read item; do
-                if [ -e "$DMC/$(nmfile "${item}").mp3" ]; then
-                    echo "./$(nmfile "${item}").mp3" >> "$DT/rsync_list"
-                elif [ -e "$DMC/$(nmfile "${item}").mp4" ]; then
-                    echo "./$(nmfile "${item}").mp4" >> "$DT/rsync_list"
-                elif [ -e "$DMC/$(nmfile "${item}").m4v" ]; then
-                    echo "./$(nmfile "${item}").m4v" >> "$DT/rsync_list"
-                elif [ -e "$DMC/$(nmfile "${item}").m4a" ]; then
-                    echo "./$(nmfile "${item}").m4a" >> "$DT/rsync_list"
-                fi
-            done < <(cat "$DCP/2.lst")
-        fi
-        cd /
-        if [[ ${new_episodes} -gt 0 || ${2} = 2 || ${synf} = TRUE ]]; then
-            if [ ${rsync_delete} = 0 ]; then
-                if [ ${synf} = TRUE ]; then
-                    rsync -am --stats --omit-dir-times --ignore-errors --log-file="$DT/l_sync" \
-                    --files-from="$DT/rsync_list" "$DM_tl/Podcasts/cache/" "${SYNCDIR}"
-                    exit=$?
-                else
-                    rsync -am --stats --exclude="*.item" --exclude="*.png" \
-                    --exclude="*.html" --omit-dir-times --ignore-errors \
-                    --log-file="$DT/l_sync" "$DM_tl/Podcasts/cache/" "${SYNCDIR}"
-                    exit=$?
-                fi
-            elif [ ${rsync_delete} = 1 ]; then 
-                if [ ${synf} = TRUE ]; then
-                    rsync -am --stats --delete --omit-dir-times --ignore-errors --log-file="$DT/l_sync" \
-                    --files-from="$DT/rsync_list" "$DM_tl/Podcasts/cache/" "${SYNCDIR}"
-                    exit=$?
-                else
-                    rsync -am --stats --delete --exclude="*.item" --exclude="*.png" \
-                    --exclude="*.html" --omit-dir-times --ignore-errors \
-                    --log-file="$DT/l_sync" "$DM_tl/Podcasts/cache/" "${SYNCDIR}"
-                    exit=$?
-                fi
-            fi
-            if [ $exit != 0 ]; then
-                if [[ ${2} -ge 1 ]]; then
-                    (sleep 1 && notify-send -i idiomind \
-                    "$(gettext "Error")" \
-                    "$(gettext "Error while syncing")" -t 8000) &
-                elif [[ ${2} = 0 ]]; then
-                    echo "$(gettext "Error while syncing") - $(cat "$DT/l_sync")" >> "$DM_tl/Podcasts/.conf/feed.err"
-                fi
-            else
-                sum="$(cat "$DT/l_sync" |sed 's/^.*]//;/\+/d;/^$/d;s/^ *//' |head -n5 |tail -n4)"
-                [[ ${2} -ge 1 ]] && sleep 1 && notify-send -i idiomind \
-                "$(gettext "Synchronization finished")" \
-                "${sum}" -t 8000
-            fi
-        fi
-        cleanups "$DT/l_sync" "$DT/rsync_list"
-        exit
-    fi
-} >/dev/null 2>&1
  
 
 function tasks() {
@@ -1069,8 +1004,6 @@ case "$1" in
     dlg_links ;;
     set_channel)
     set_channel "$@" ;;
-    sync)
-    sync "$@" ;;
     tasks)
     tasks "$@" ;;
     new_item)

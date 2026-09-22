@@ -1,0 +1,10 @@
+TYPE 2 — SENTENCES ONLY
+
+Rules:
+- Generate ONLY sentences. Do NOT generate words.
+- The "words" array MUST be empty: [].
+- The "sentences" array MUST contain between 8 and 15 items.
+- Each sentence must have "en" (target language) and "es" (source language).
+- Sentences must be coherent and form a natural flow (a conversation, a story, a description).
+- Do NOT duplicate sentences.
+- Do NOT include sentences longer than 180 characters.

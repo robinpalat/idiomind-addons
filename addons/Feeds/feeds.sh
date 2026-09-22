@@ -4,7 +4,7 @@
 
 source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
-
+DSP="$DS_a/Feeds"
 
 create_from_feed() {
 
@@ -26,7 +26,7 @@ if ! wget -q -O "$DT_f/feed.xml" "$feed_url"; then
     return 1
 fi
 
-	feed_info="$(xsltproc "$DS/default/ch.xml" "$DT_f/feed.xml" 2>/dev/null)"
+	feed_info="$(xsltproc "$DSP/chnl.xml" "$DT_f/feed.xml" 2>/dev/null)"
 
 	feed_title="${feed_info%%-!-*}"
 
@@ -85,7 +85,7 @@ fetch_content() {
         if [ -n "${_feed}" ]; then
          
             wget -O "$DT/out.xml" "${_feed}"
-            feed_items="$(xsltproc "$DS/default/tmpl.xml" "$DT/out.xml")"
+            feed_items="$(xsltproc "$DSP/tmplt.xml" "$DT/out.xml")"
             if [ -z "${feed_items}" ]; then internet; fi
             feed_items="$(echo "${feed_items}" |tr '\n' '*' |tr -s '[:space:]' |sed 's/EOL/\n/g' |head -n2)"
             feed_items="$(echo "${feed_items}" |sed '/^$/d')"
@@ -134,7 +134,7 @@ fetch_content() {
 
 function tasks() {
 	
-	"$DS/ifs/mods/start/update_feeds.sh"
+	"$DS/ifs/extensions/start/update_feeds.sh"
 	 
 } >/dev/null 2>&1
 

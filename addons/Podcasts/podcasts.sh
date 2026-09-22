@@ -329,7 +329,7 @@ function podmode() {
 } 
 
 function update() {
-    include "$DS/ifs/mods/add"
+    include "$DS/ifs/extensions/add"
     sets=( 'channel' 'link' 'logo' 'ntype' \
     'nmedia' 'ntitle' 'nsumm' 'nimage' 'url' )
     
@@ -437,7 +437,7 @@ function update() {
 
     load_feed_metadata() {
         local metadata
-        metadata="$(xsltproc "$DS/default/ch.xml" "$DT/out.xml" 2>/dev/null \
+        metadata="$(xsltproc "$DSP/ch.xml" "$DT/out.xml" 2>/dev/null \
             | tr '\n' ' ' | sed -r 's|\-\!-|\n|g')"
         [ -z "${channel}" ] && channel="$(sed -n '1p' <<< "${metadata}" \
             | sed 's/^ *//; s/ *$//')"
@@ -470,7 +470,7 @@ function update() {
     
     fetch_podcasts() {
         n=0; d=0; tit=0; ait=0; vit=0
-        include "$DS/ifs/mods/add"
+        include "$DS/ifs/extensions/add"
         source "$DS/default/sets.cfg"
         lgs=${slangs[$slng]}
         for ln in {1..20}; do
@@ -500,7 +500,7 @@ function update() {
                             sed -i '/^$/d' "$DT/out.xml"
                         fi
                         load_feed_metadata
-                        podcast_items="$(xsltproc "$DS/default/tp1.xml" "$DT/out.xml")"
+                        podcast_items="$(xsltproc "$DSP/tp1.xml" "$DT/out.xml")"
                         podcast_items="$(echo "${podcast_items}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
                         podcast_items="$(echo "${podcast_items}" | tr '\n' ' ' \
                         | tr -s '[:space:]' | sed 's/EOL/\n/g' | head -n ${downloads})"
@@ -760,18 +760,18 @@ function set_channel() {
     # head
     feed_dest="$(curl -Ls -o /dev/null -w %{url_effective} "${feed}")"
     curl "${feed_dest}" |sed '1{/^$/d}' > "$DT/rss.xml"
-    xml="$(xsltproc "$DS/default/ch.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DSP/ch.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items1="$(echo "${xml}"  |tr '\n' ' ' \
     | tr -s '[:space:]' |sed 's/EOL/\n/g' |sed -r 's|-\!-|\n|g')"
     # content t1
-    xml="$(xsltproc "$DS/default/tp1.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DSP/tp1.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items2="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
     
     # content t2
-    xml="$(xsltproc "$DS/default/tp2.xml" "$DT/rss.xml")"
+    xml="$(xsltproc "$DSP/tp2.xml" "$DT/rss.xml")"
     xml="$(echo -e "${xml}" |sed -e 's/^[ \t]*//' |tr -d '\n')"
     items4="$(echo "${xml}" |tr '\n' ' ' |tr -s "[:space:]" \
     | sed 's/EOL/\n/g' |head -n 1 |sed -r 's|-\!-|\n|g')"
@@ -879,10 +879,10 @@ function tasks() {
 	if [ -f "$DT/playlck" ] && [ "$(< "$DT/playlck")" = 0 ]; then
 		if [[ "$2" = "$(gettext "Watch: Recent video episodes")" ]]; then
 			"$DS/stop.sh" 2; echo "$2" > "$DT/playlck"
-			"$DS/ifs/mods/chng/podcasts.sh" "_video_"
+			"$DS/ifs/extensions/change/podcasts.sh" "_video_"
 		elif [[ "$2" = "$(gettext "Listen: Recent episodes")" ]]; then
 			"$DS/stop.sh" 2; echo "$2" > "$DT/playlck"
-			"$DS/ifs/mods/chng/podcasts.sh" "_audio_"
+			"$DS/ifs/extensions/change/podcasts.sh" "_audio_"
 		else
 			export item
 			vwr

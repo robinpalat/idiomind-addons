@@ -1,0 +1,13 @@
+TYPE 3 — HYBRID (SENTENCES FIRST, THEN WORDS)
+
+Rules:
+- Generate sentences FIRST, then words.
+- The "sentences" array MUST contain between 8 and 15 items.
+- The "words" array MUST contain between 5 and 10 items.
+- Each sentence must have "en" (target language) and "es" (source language).
+- Each word must have "text" (target language), "translation" (source language), and "example".
+- CRITICAL: Every word MUST appear literally in at least one of the generated sentences.
+- CRITICAL: The "example" field of each word MUST be one of the generated sentences (exact match, same string).
+- Do NOT generate words that do not appear in any sentence.
+- Do NOT duplicate words.
+- Sentences must be coherent and form a natural flow.

@@ -3,7 +3,7 @@
 
 if [[ $1 = 'tasks' ]]; then
 
-	"$DS/ifs/mods/start/update_feeds.sh" 'UPDT'
+	"$DS/ifs/extensions/start/update_feeds.sh" 'UPDT'
 
 else
 	DC_a="$HOME/.config/idiomind/addons"

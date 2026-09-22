@@ -1,0 +1,10 @@
+TYPE 1 — WORDS / EXPRESSIONS ONLY
+
+Rules:
+- Generate ONLY words and expressions. Do NOT generate sentences.
+- The "sentences" array MUST be empty: [].
+- The "words" array MUST contain between 8 and 15 items.
+- Each word must have a clear, useful translation.
+- Each word must have an "example" sentence in the target language that shows how the word is used naturally. The example is NOT a sentence of the topic; it is just a usage example for the word.
+- Do NOT duplicate words.
+- Do NOT include proper nouns unless they are essential to the topic.

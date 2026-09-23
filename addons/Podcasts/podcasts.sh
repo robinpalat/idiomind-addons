@@ -411,13 +411,13 @@ function update() {
 		esac
 
 		video="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-		\r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
+		\r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/addons/Podcasts/mkhtml.css\">
 		\r<video controls>
 		\r<source src=\"$fname.$ex\" type=\"$vtype\">
 		\rYour browser does not support the video tag.</video>"
 
 		audio="<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />
-		\r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/default/mkhtml.css\">
+		\r<link rel=\"stylesheet\" href=\"/usr/share/idiomind/addons/Podcasts/mkhtml.css\">
 		\r<br><div class=\"title\"><h2><a href=\"$link\">$title</a></h2></div><br>
 		\r<div class=\"summary\"><audio controls><br>
 		\r<source src=\"$fname.$ex\" type=\"audio/mpeg\">

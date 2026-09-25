@@ -9,6 +9,23 @@ if [ -f "$DC_a/Feeds${tlng}_tsk" ]; then
 	rm -f "$DC_a/Feeds${tlng}_tsk"
 fi
 
+# A feed task only makes sense when the current language has at least
+# one topic configured with feeds ($DM_tl/<topic>/.conf/feeds).
+# feeds.cfg alone is not an indicator: it only holds global settings.
+has_feeds=0
+while IFS= read -r _feed_topic; do
+    if [ -f "$DM_tl/${_feed_topic}/.conf/feeds" ]; then
+        has_feeds=1
+        break
+    fi
+done < <(
+    cd "$DM_tl" 2>/dev/null &&
+    find ./ -maxdepth 1 -mtime -80 \
+        -type d -not -path '*/\.*' \
+        -exec ls -tNd {} + |
+        sed 's|\./||g;/^$/d'
+)
+
 if [[ "$update" = TRUE || "$1" == 'UPDT' ]]; then
 
 
@@ -35,17 +52,21 @@ if [[ "$update" = TRUE || "$1" == 'UPDT' ]]; then
         ) &
     fi
 
+    if [ "$has_feeds" = 1 ]; then
     (
         sleep 50
         echo "$(gettext "Update Topics from Feeds")" > "$DC_a/Feeds${tlng}_tsk"
         idiomind tasks
     ) &
+    fi
     
     
 elif [ "$update" = FALSE ]; then
 
-    echo "$(gettext "Update Topics from Feeds")" > "$DC_a/Feeds${tlng}_tsk"
-    idiomind tasks
+    if [ "$has_feeds" = 1 ]; then
+        echo "$(gettext "Update Topics from Feeds")" > "$DC_a/Feeds${tlng}_tsk"
+        idiomind tasks
+    fi
 
 
 fi

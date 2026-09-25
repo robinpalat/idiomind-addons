@@ -330,7 +330,8 @@ $(gettext "Please open the AI Topic Builder preferences and configure the provid
     form="$(yad --form \
         --title="$(gettext "AI Topic Builder")" \
         --name=Idiomind --class=Idiomind \
-        --window-icon=idiomind --center --on-top \
+        --window-icon=$DS/images/logo.png \
+        --center --on-top \
         --width=520 --height=320 --borders=12 \
         --separator='|' \
         --field="$(gettext "Topic")" "" \

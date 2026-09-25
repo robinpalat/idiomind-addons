@@ -38,7 +38,8 @@ $(gettext "Select a provider, enter your API key, and optionally override the en
 c=$(yad --form --title="$(gettext "$name")" \
     --name=Idiomind --class=Idiomind \
     --text="$label" \
-    --window-icon=idiomind --align=right --center \
+    --window-icon=$DS/images/logo.png \
+    --align=right --center \
     --on-top --skip-taskbar --scroll \
     --width=520 --height=380 --borders=12 \
     --always-print-result --editable --print-all \

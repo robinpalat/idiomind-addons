@@ -2,7 +2,10 @@
 # -*- ENCODING: UTF-8 -*-
 source /usr/share/idiomind/default/c.conf
 DCF="$DM_tl/Feeds/.conf"
-update="$(grep -o 'update="[^"]*' "$DC_a/feeds.cfg" | grep -o '[^"]*$')"
+update=""
+if [ -f "$DC_a/feeds.cfg" ]; then
+    update="$(grep -o 'update="[^"]*' "$DC_a/feeds.cfg" 2>/dev/null | grep -o '[^"]*$')"
+fi
 
 
 if [ -f "$DC_a/Feeds${tlng}_tsk" ]; then

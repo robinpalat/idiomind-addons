@@ -13,7 +13,7 @@ else
 	[ ! -f "$fileconf" ] && touch "$fileconf"
 
 
-label="<b>$(gettext "Feeds")</b>\n\n\
+label="<big><b>$(gettext "Feeds")</b></big>\n\n\
 $(gettext "Feeds makes it possible to automatically add content to a topic based on updates from a feed.")\n\n\
 <b>$(gettext "How does it work?")</b>\n\n\
 $(gettext "When creating a topic, instead of entering its name, simply enter the exact URL of the feed. Idiomind will automatically find the channel name, create the topic with that name, and configure it to receive content from that URL.")\n\n\

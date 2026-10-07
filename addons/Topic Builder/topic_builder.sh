@@ -8,8 +8,8 @@ source "$DS/default/sets.cfg"
 # -----------------------------------------------------------------------------
 # Rutas
 # -----------------------------------------------------------------------------
-AI_ADDON_DIR="$DS/addons/AI Topic Builder"
-AI_CFG="$DC_a/ai_topic_builder.cfg"
+AI_ADDON_DIR="$DS/addons/Topic Builder"
+AI_CFG="$DC_a/topic_builder.cfg"
 
 # -----------------------------------------------------------------------------
 # Leer configuración del proveedor desde ai_topic_builder.cfg
@@ -328,7 +328,7 @@ $(gettext "Please open the AI Topic Builder preferences and configure the provid
     # Formulario
     local form
     form="$(yad --form \
-        --title="$(gettext "AI Topic Builder")" \
+        --title="$(gettext "Topic Builder")" \
         --name=Idiomind --class=Idiomind \
         --window-icon=$DS/images/logo.png \
         --center --on-top \

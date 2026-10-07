@@ -1,10 +1,10 @@
-# AI Topic Builder
+# Topic Builder
 
 An Idiomind add-on that creates topics using artificial intelligence.
 
 ## What it does
 
-AI Topic Builder lets you create complete Idiomind topics from a short
+Topic Builder lets you create complete Idiomind topics from a short
 description. You provide a topic name, a category, a content type, and
 optional instructions. The add-on sends a prompt to an AI provider,
 receives a structured JSON response, validates it, and then creates a
@@ -120,7 +120,7 @@ to diagnose the problem.
   (`tlng` and `slng`). They cannot be overridden per topic.
 
 ## Files
-addons/AI Topic Builder/
+addons/Topic Builder/
 ├── README.md
 ├── cnfg.sh
 ├── ai_topic_builder.sh

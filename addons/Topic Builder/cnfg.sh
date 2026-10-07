@@ -2,7 +2,7 @@
 # -*- ENCODING: UTF-8 -*-
 
 DC_a="$HOME/.config/idiomind/addons"
-fileconf="$DC_a/ai_topic_builder.cfg"
+fileconf="$DC_a/topic_builder.cfg"
 name="AI Topic Builder"
 
 [ ! -f "$fileconf" ] && touch "$fileconf"
@@ -29,9 +29,13 @@ for p in OpenAI Groq DeepSeek Ollama Custom; do
     fi
 done
 
-# --- Etiqueta ---
-label="<b>$(gettext "AI Topic Builder")</b>\n\n\
+# --- Label ---
+label="<b><big>$(gettext "Topic Builder")</big></b>\n\n\
 $(gettext "Configure the AI provider used to generate topics.")\n\n\
+$(gettext "To start AI Topic Builder, go to New Topic and enter:")\n\n\
+<b>/auto</b>\n\n\
+$(gettext "This command starts the automatic topic generation instead of creating a topic with the entered name.")\n\n\
+<b>$(gettext "Providers:")</b>\n\n\
 $(gettext "Select a provider, enter your API key, and optionally override the endpoint and model.")\n"
 
 # --- Formulario ---

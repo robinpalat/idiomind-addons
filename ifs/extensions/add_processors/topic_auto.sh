@@ -2,6 +2,6 @@
 # -*- ENCODING: UTF-8 -*-
 
 if [[ "$name" = "/auto" ]]; then
-    "$DS/addons/AI Topic Builder/ai_topic_builder.sh" start
+    "$DS/addons/Topic Builder/topic_builder.sh" start
     exit 0
 fi

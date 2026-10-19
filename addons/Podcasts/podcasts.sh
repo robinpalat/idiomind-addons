@@ -723,33 +723,60 @@ function update() {
 
 
 function vwr() {
-    sz=(660 380); [[ ${swind} = TRUE ]] && sz=(540 300)
-    dir="$DM_tl/Podcasts/cache"
-    fname=$(echo -n "${item}" | md5sum | rev | cut -c 4- | rev)
-    channel="$(grep -o 'channel="[^"]*' "$dir/${fname}.item" |grep -o '[^"]*$')"
-    if grep -Fxo "${item}" < "$DM_tl/Podcasts/.conf/2.lst"; then
-        btnlabel="!list-remove!$(gettext "Remove from favorites")"
-        btncmd="$DSP/cnfg.sh 'remove_item'"
-    else
-        btnlabel="!emblem-favorite!$(gettext "Add to favorites")"
-        btncmd="'$DSP/podcasts.sh' new_item"
-    fi
-    btncmd2="'$DSP/podcasts.sh' save_as"
-    _width=${sz[0]}; _height=${sz[1]}
-    if [ -f "$dir/$fname.html" ]; then
-        uri="$dir/$fname.html"
-    else
-        source "$DS/ifs/cmns.sh"
-        rm_item 1; rm_item 2
-        msg "$(gettext "No such file or directory")\n${topic}\n" dialog-error Error & exit 1
-    fi
-    	export uri channel _height _width
+    local dir="$DM_tl/Podcasts/cache"
+    local fname="$(echo -n "${item}" | md5sum | rev | cut -c 4- | rev)"
+    local item_file="$dir/${fname}.item"
+    local title="" channel="" media_file="" is_video=0
 
-/usr/lib/idiomind/idiomind-utils html \
-    "$uri" \
-    "$channel" \
-    "$_width" \
-    "$_height"
+    if [ -f "$item_file" ]; then
+        title="$(grep -o 'title="[^"]*' "$item_file" | grep -o '[^"]*$')"
+        channel="$(grep -o 'channel="[^"]*' "$item_file" | grep -o '[^"]*$')"
+    fi
+
+    if [ -f "$dir/${fname}.mp4" ]; then
+        media_file="$dir/${fname}.mp4"; is_video=1
+    elif [ -f "$dir/${fname}.m4v" ]; then
+        media_file="$dir/${fname}.m4v"; is_video=1
+    elif [ -f "$dir/${fname}.mov" ]; then
+        media_file="$dir/${fname}.mov"; is_video=1
+    elif [ -f "$dir/${fname}.avi" ]; then
+        media_file="$dir/${fname}.avi"; is_video=1
+    elif [ -f "$dir/${fname}.flv" ]; then
+        media_file="$dir/${fname}.flv"; is_video=1
+    elif [ -f "$dir/${fname}.mp3" ]; then
+        media_file="$dir/${fname}.mp3"
+    elif [ -f "$dir/${fname}.ogg" ]; then
+        media_file="$dir/${fname}.ogg"
+    elif [ -f "$dir/${fname}.m4a" ]; then
+        media_file="$dir/${fname}.m4a"
+    fi
+
+    if [ -z "$media_file" ]; then
+        source "$DS/ifs/cmns.sh"
+        msg "$(gettext "No such file or directory")\n${item}\n" dialog-error Error & exit 1
+    fi
+
+    local altrvi=""
+    if [ -f "$DM_tl/Podcasts/.conf/podcasts.cfg" ]; then
+        altrvi="$(grep -o 'altrvi="[^"]*' "$DM_tl/Podcasts/.conf/podcasts.cfg" | grep -o '[^"]*$')"
+    fi
+
+    local notif_title="${title:-${item}}"
+    local notif_body="${channel:-$item}"
+
+    if [ "$is_video" = 1 ]; then
+        if [ -n "$altrvi" ]; then
+            "$altrvi" "$media_file" &
+        else
+            mplayer -noconsolecontrols -name Idiomind \
+            -title "Idiomind (mplayer)" "$media_file" &
+        fi
+        notify-send -i idiomind "$notif_title" "$notif_body" -t 5000
+    else
+        echo -e "${notif_title}" > "$DT/playlck"
+        "$DS/play.sh" play_file "$media_file" "$title" &
+        notify-send -i idiomind "$notif_title" "$notif_body" -t 5000
+    fi
 }
 
 function set_channel() {

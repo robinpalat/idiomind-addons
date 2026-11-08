@@ -1,6 +1,23 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Speech to text
+# NAME: Speech to text
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Configures the speech recognition provider used to convert audio into text.
+#
+# FILES:
+#   addons/Speech to text/cnfg.sh
+#   addons/Speech to text/test.flac
+#   ifs/extensions/add_processors/speech_to_text.sh
+#
+# ============================================================
+
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
 

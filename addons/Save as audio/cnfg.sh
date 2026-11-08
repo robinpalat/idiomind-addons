@@ -1,6 +1,36 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Save as audio
+# NAME: Save as audio
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Exports the words and sentences of a topic as a single MP3, with optional pronunciation recall.
+#
+# FILES:
+#   addons/Save as audio/cnfg.sh
+#   addons/Save as audio/Chinese.png
+#   addons/Save as audio/English.png
+#   addons/Save as audio/French.png
+#   addons/Save as audio/German.png
+#   addons/Save as audio/Italian.png
+#   addons/Save as audio/Japanese.png
+#   addons/Save as audio/Portuguese.png
+#   addons/Save as audio/Russian.png
+#   addons/Save as audio/Spanish.png
+#   addons/Save as audio/si0_1.mp3
+#   addons/Save as audio/si0_2.mp3
+#   addons/Save as audio/si1.mp3
+#   addons/Save as audio/si2.mp3
+#   addons/Save as audio/si4.mp3
+#   ifs/extensions/export/Audio file (mp3).sh
+#
+# ============================================================
+
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
 DC_a="$HOME/.config/idiomind/addons"

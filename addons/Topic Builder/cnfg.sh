@@ -1,6 +1,28 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Topic Builder
+# NAME: Topic Builder
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Creates complete Idiomind topics from a short description using an AI provider.
+#
+# FILES:
+#   addons/Topic Builder/cnfg.sh
+#   addons/Topic Builder/topic_builder.sh
+#   addons/Topic Builder/README.md
+#   addons/Topic Builder/prompts/base.txt
+#   addons/Topic Builder/prompts/type1.txt
+#   addons/Topic Builder/prompts/type2.txt
+#   addons/Topic Builder/prompts/type3.txt
+#   ifs/extensions/add_processors/topic_auto.sh
+#
+# ============================================================
+
 DC_a="$HOME/.config/idiomind/addons"
 fileconf="$DC_a/topic_builder.cfg"
 name="AI Topic Builder"

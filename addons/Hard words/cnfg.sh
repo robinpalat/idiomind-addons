@@ -1,6 +1,22 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Hard words
+# NAME: Hard words
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Collects words that repeatedly cause difficulty during practice into a dedicated topic.
+#
+# FILES:
+#   addons/Hard words/cnfg.sh
+#   ifs/extensions/practice/hard_words.sh
+#
+# ============================================================
+
 [ -z "$DM" ] && source /usr/share/idiomind/default/c.conf
 source "$DS/ifs/cmns.sh"
 DC_a="$HOME/.config/idiomind/addons"

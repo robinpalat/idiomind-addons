@@ -1,6 +1,34 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Podcasts
+# NAME: Podcasts
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Adds podcast content to topics and manages subscriptions and downloads.
+#
+# FILES:
+#   addons/Podcasts/cnfg.sh
+#   addons/Podcasts/podcasts.sh
+#   addons/Podcasts/ch.xml
+#   addons/Podcasts/tmpl.xml
+#   addons/Podcasts/tp1.xml
+#   addons/Podcasts/tp2.xml
+#   addons/Podcasts/mkhtml.css
+#   addons/Podcasts/images/audio.png
+#   addons/Podcasts/images/video.png
+#   /images/img.11.png
+#   ifs/extensions/change/podcasts.sh
+#   ifs/extensions/main/Podcasts.sh
+#   ifs/extensions/play/podcasts.sh
+#   ifs/extensions/start/update_podcasts.sh
+#
+# ============================================================
+
 cd "$(dirname "$0")"
 source /usr/share/idiomind/default/c.conf
 date=$(date +%d)

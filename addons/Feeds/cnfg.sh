@@ -1,6 +1,26 @@
 #!/bin/bash
 # -*- ENCODING: UTF-8 -*-
 
+# ============================================================
+# ADDON 
+# ============================================================
+#
+# ID: Feeds
+# NAME: Feeds
+# VERSION: 0.1.4
+# STATUS: external
+# DESCRIPTION: Automatically adds content to topics from RSS/Atom feed updates.
+#
+# FILES:
+#   addons/Feeds/cnfg.sh
+#   addons/Feeds/feeds.sh
+#   addons/Feeds/chnl.xml
+#   addons/Feeds/tmplt.xml
+#   ifs/extensions/add_processors/topic_feed.sh
+#   ifs/extensions/start/update_feeds.sh
+#
+# ============================================================
+
 if [[ $1 = 'tasks' ]]; then
 
 	"$DS/ifs/extensions/start/update_feeds.sh" 'UPDT'
